@@ -62,20 +62,54 @@ immediately notify administrators of suspicious activity — suitable for
 
 ## 🚀 Quick Start
 
-### 1. Install dependencies
+### 0. Prerequisites
 
+- **Python 3.10+** (see `.python-version`)
+- **pip** or **conda** package manager
+- For face recognition: CMake and build tools (Windows/Linux/macOS)
+  - **Windows**: Install Visual Studio Build Tools or MinGW
+  - **Linux**: `sudo apt-get install cmake libsm6 libxext6`
+  - **macOS**: Install Xcode Command Line Tools: `xcode-select --install`
+
+### 1. Clone & Setup Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/mugire-can/ai-security-system.git
+cd ai-security-system
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # on Windows: venv\Scripts\activate
+
+# Upgrade pip
+pip install --upgrade pip
+```
+
+### 2. Install Dependencies
+
+**Option A: Full Installation (Recommended)**
 ```bash
 pip install -r requirements.txt
 ```
 
-> Heavy ML packages (PyTorch, DeepFace, face-recognition/dlib) are listed in
-> `requirements.txt`. Install only what you need:
-> * **Detection only**: `pip install ultralytics numpy opencv-python`
-> * **Emotion analysis**: add `deepface`
-> * **Face recognition**: add `face-recognition` (requires dlib / CMake)
-> * **Alerts + database**: add `SQLAlchemy python-dotenv`
+**Option B: Minimal Installation**
+```bash
+# Detection only (no face recognition, emotion analysis)
+pip install opencv-python ultralytics numpy pydantic
+```
 
-### 2. Add known faces (for roll-call / attendance)
+**Option C: Development Setup**
+```bash
+pip install -r requirements.txt
+pip install black flake8 mypy isort  # Code quality tools
+```
+
+> ⚠️ **Heavy ML packages** (PyTorch, DeepFace, face-recognition with dlib) can take 
+> 10-30 minutes to install depending on your system. Consider using pre-built wheels
+> or GPU-optimized packages if available.
+
+### 3. Add Known Faces (Optional - For Attendance/Roll-Call)
 
 ```
 data/known_faces/
@@ -86,36 +120,77 @@ data/known_faces/
     photo.jpg
 ```
 
-### 3. Configure the system
+### 4. Configure Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+```bash
 VENUE_TYPE=school        # school | commercial | workplace
 VENUE_NAME="Central High School"
-KNOWN_FACES_DIR=data/known_faces
 ADMIN_EMAIL=admin@school.edu
 SMTP_HOST=smtp.gmail.com
 SMTP_USER=alerts@school.edu
 SMTP_PASSWORD=your-app-password
 ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
+DATABASE_URL=sqlite:///data/security_system.db
 ```
 
-### 4. Run
+### 5. Run the System
 
+**Demo Mode** (no real camera needed)
 ```bash
-# Demo mode (no real camera needed — shows dashboard with mock data)
 python main.py --demo
+```
 
-# Real camera (webcam index 0)
+**Real Camera** (webcam index 0)
+```bash
 python main.py --camera-source 0 --venue-name "My School"
+```
 
-# IP camera / RTSP stream
+**IP Camera / RTSP Stream**
+```bash
 python main.py --camera-source "rtsp://admin:pass@192.168.1.50:554/stream"
+```
 
-# Video file (for testing)
+**Video File** (for testing/debugging)
+```bash
 python main.py --camera-source /path/to/video.mp4
 ```
+
+**With Debug Output**
+```bash
+python main.py --demo --debug
+```
+
+### 6. Run Tests
+
+```bash
+# All tests
+python -m pytest tests/ -v
+
+# With coverage report
+python -m pytest tests/ -v --cov=src --cov-report=html
+
+# Specific test file
+python -m pytest tests/test_behaviour_analyser.py -v
+```
+
+---
+
+## 📋 System Requirements
+
+| Component | Requirement | Notes |
+|-----------|-------------|-------|
+| **Python** | 3.10 - 3.14 | See `.python-version` |
+| **RAM** | 8GB+ | 16GB+ recommended for ML models |
+| **Disk** | 10GB+ | For PyTorch and models |
+| **Camera** | Webcam or RTSP | USB, IP, RTSP supported |
+| **GPU** | Optional | NVIDIA CUDA 12.1+ for acceleration |
 
 ---
 
@@ -156,11 +231,35 @@ environment variables.
 ## 🧪 Running Tests
 
 ```bash
-pip install pytest pytest-cov sqlalchemy numpy
+# All tests with verbose output
 python -m pytest tests/ -v
+
+# With coverage report
+python -m pytest tests/ -v --cov=src --cov-report=html
+
+# Run specific test file
+python -m pytest tests/test_behaviour_analyser.py -v
 ```
 
-Expected output: **49 passed**.
+**Expected output**: All core tests pass. Coverage target: >80% for src/
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup
+- Code style guidelines
+- Testing requirements
+- PR process
+
+### Quick contribution checklist:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for your changes
+4. Ensure tests pass (`pytest tests/ -v`)
+5. Commit with clear messages
+6. Push and open a Pull Request
 
 ---
 
@@ -168,13 +267,29 @@ Expected output: **49 passed**.
 
 * **No video is stored by default** — only snapshots triggered by alerts.
 * Face encodings are stored only locally; nothing is sent to the cloud.
-* SMTP credentials must be provided via environment variables — never
-  hardcoded in source.
-* The system is designed to comply with GDPR "privacy by design" principles:
-  the minimum personal data needed for each feature is collected and retained.
+* SMTP credentials must be provided via environment variables — never hardcoded in source.
+* The system is designed to comply with GDPR "privacy by design" principles.
+* For security concerns, please email instead of opening public issues.
+
+---
+
+## 📊 Project Status
+
+- **Status**: Alpha (0.1.0)
+- **Python**: 3.10 - 3.14
+- **CI/CD**: GitHub Actions (tests on push/PR)
+- **Coverage**: See [Codecov](https://codecov.io)
 
 ---
 
 ## 📄 License
 
-MIT — see `LICENSE` for details.
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/mugire-can/ai-security-system/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mugire-can/ai-security-system/discussions)
+- **Documentation**: See README sections above
