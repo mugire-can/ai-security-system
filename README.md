@@ -251,7 +251,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Development setup
 - Code style guidelines
 - Testing requirements
-- PR process
+- PR process.
 
 ### Quick contribution checklist:
 1. Fork the repository
@@ -259,7 +259,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 3. Write tests for your changes
 4. Ensure tests pass (`pytest tests/ -v`)
 5. Commit with clear messages
-6. Push and open a Pull Request
+6. Push and open a Pull Request.
 
 ---
 
