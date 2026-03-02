@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  python-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "5000:5000"
+    environment:
+      - ADMIN_EMAIL=admin@example.com
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - ALERT_WEBHOOK_URL=http://webhook.example.com
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/security_db
+    depends_on:
+      - postgres
+    volumes:
+      - ./data:/app/data
+    networks:
+      - security-network
+
+  alert_dispatcher:
+    build:
+      context: ./services/go/alert_dispatcher
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    networks:
+      - security-network
+
+  camera_streamer:
+    build:
+      context: ./services/go/camera_streamer
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - security-network
+
+  api:
+    build:
+      context: ./services/typescript/api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - API_PORT=3000
+      - ALERT_DISPATCHER_URL=http://alert_dispatcher:8080
+      - CAMERA_STREAMER_URL=http://camera_streamer:8081
+    depends_on:
+      - alert_dispatcher
+      - camera_streamer
+    networks:
+      - security-network
+
+  video_optimizer:
+    build:
+      context: ./services/rust/video_optimizer
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - OPTIMIZER_PORT=8082
+      - RUST_LOG=info
+    networks:
+      - security-network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=security_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - security-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - security-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  security-network:
+    driver: bridge
