@@ -8,6 +8,10 @@ Supports:
 
 Each camera runs in its own background thread and puts decoded frames into a
 thread-safe queue so that the processing pipeline never blocks on I/O.
+
+Note: ``opencv-python`` (cv2) is imported lazily inside methods that actually
+open a capture device so that the module can be imported and tested without
+a full OpenCV installation.
 """
 
 import logging
@@ -15,9 +19,8 @@ import queue
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-import cv2
 import numpy as np
 
 from config.settings import CameraConfig
@@ -52,7 +55,7 @@ class CameraStream:
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._frame_count = 0
-        self._cap: Optional[cv2.VideoCapture] = None
+        self._cap: Any = None  # cv2.VideoCapture, set lazily in start()
         self.is_running = False
 
     # ------------------------------------------------------------------
@@ -61,6 +64,14 @@ class CameraStream:
 
     def start(self) -> "CameraStream":
         """Open the capture device and start the reader thread."""
+        try:
+            import cv2
+        except ImportError as exc:
+            raise RuntimeError(
+                "opencv-python is required to open a camera. "
+                "Install it with: pip install opencv-python"
+            ) from exc
+
         source: int | str
         try:
             source = int(self.config.source)
@@ -164,7 +175,7 @@ class CameraManager:
         manager.stop_all()
     """
 
-    def __init__(self, camera_configs: list[CameraConfig]) -> None:
+    def __init__(self, camera_configs: List[CameraConfig]) -> None:
         self._streams: Dict[str, CameraStream] = {}
         for cfg in camera_configs:
             if cfg.enabled:
@@ -189,7 +200,7 @@ class CameraManager:
     # Frame access
     # ------------------------------------------------------------------
 
-    def read_all_frames(self, timeout: float = 0.1) -> list[Frame]:
+    def read_all_frames(self, timeout: float = 0.1) -> List[Frame]:
         """Collect one frame from every active camera."""
         frames = []
         for stream in self._streams.values():
@@ -204,7 +215,7 @@ class CameraManager:
         return self._streams.get(camera_id)
 
     @property
-    def active_camera_ids(self) -> list[str]:
+    def active_camera_ids(self) -> List[str]:
         return [cid for cid, s in self._streams.items() if s.is_running]
 
     def draw_info_overlay(
@@ -214,6 +225,12 @@ class CameraManager:
         Burn camera ID, zone, and timestamp into the top-left corner of a frame.
         Returns a new array (does not modify the original in-place).
         """
+        try:
+            import cv2
+        except ImportError:
+            logger.warning("cv2 not available — draw_info_overlay skipped.")
+            return frame.copy()
+
         out = frame.copy()
         ts = time.strftime("%Y-%m-%d %H:%M:%S")
         lines = [
