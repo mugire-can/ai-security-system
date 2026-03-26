@@ -222,7 +222,11 @@ class BehaviourAnalyser:
         own_centre: Tuple[int, int],
         now: float,
     ) -> str:
-        # Fighting: close proximity to another person + high velocity
+        # Fighting: close proximity to another person + high velocity.
+        # NOTE: This is a pure bounding-box heuristic (no pose estimation).
+        # Two people standing close and moving normally may trigger a false
+        # positive.  For production use, replace with a pose-based model
+        # (e.g. YOLOv8-pose) to reduce false positives.
         for other in people_centres:
             if other == own_centre:
                 continue
