@@ -18,6 +18,10 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
+# Ensure UTF-8 output on Windows
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from src.alerts.alert_manager import Alert
 
 logger = logging.getLogger(__name__)
@@ -138,7 +142,7 @@ class AdminDashboard:
         print(_BOLD + _CYAN + "=" * w + _RESET)
 
     def _print_camera_status(self) -> None:
-        print(_BOLD + "\n📷  CAMERAS" + _RESET)
+        print(_BOLD + "\n[CAMERAS]" + _RESET)
         if not self._active_cameras:
             print("  (no active cameras)")
         else:
@@ -146,14 +150,14 @@ class AdminDashboard:
                 print(f"  {_GREEN}● {cid}{_RESET}  LIVE")
 
     def _print_live_counts(self) -> None:
-        print(_BOLD + "\n📊  LIVE COUNTS" + _RESET)
+        print(_BOLD + "\n[LIVE COUNTS]" + _RESET)
         print(
             f"  People in frame : {_BOLD}{self._person_count}{_RESET}"
             f"   Anomalies : {_BOLD}{self._anomaly_count}{_RESET}"
         )
 
     def _print_alerts(self) -> None:
-        print(_BOLD + "\n🚨  RECENT ALERTS" + _RESET)
+        print(_BOLD + "\n[RECENT ALERTS]" + _RESET)
         if not self._recent_alerts:
             print(f"  {_GREEN}No alerts.{_RESET}")
             return
@@ -175,7 +179,7 @@ class AdminDashboard:
             )
 
     def _print_attendance(self) -> None:
-        print(_BOLD + "\n👥  TODAY'S ATTENDANCE" + _RESET)
+        print(_BOLD + "\n[TODAY'S ATTENDANCE]" + _RESET)
         if not self._attendance:
             print("  (no records yet)")
             return
