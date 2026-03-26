@@ -40,6 +40,28 @@ class AlertConfig:
     # Webhook URL for instant push notifications (Slack, Teams, etc.)
     webhook_url: str = os.getenv("ALERT_WEBHOOK_URL", "")
 
+    def __repr__(self) -> str:
+        # Never expose the SMTP password in logs or repr output.
+        masked = "***" if self.smtp_password else ""
+        return (
+            f"AlertConfig(admin_email={self.admin_email!r}, "
+            f"smtp_host={self.smtp_host!r}, smtp_port={self.smtp_port}, "
+            f"smtp_user={self.smtp_user!r}, smtp_password={masked!r}, "
+            f"alert_cooldown_seconds={self.alert_cooldown_seconds}, "
+            f"webhook_url={self.webhook_url!r})"
+        )
+
+    def validate(self) -> None:
+        """Log warnings for common misconfigurations."""
+        import logging
+        _log = logging.getLogger(__name__)
+        if self.smtp_user and self.admin_email == "admin@example.com":
+            _log.warning(
+                "AlertConfig: SMTP credentials are set but ADMIN_EMAIL is still "
+                "the default placeholder 'admin@example.com'. "
+                "Set ADMIN_EMAIL env var to receive alert emails."
+            )
+
 
 @dataclass
 class DetectionConfig:

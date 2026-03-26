@@ -79,6 +79,8 @@ class AlertManager:
         self._on_alert = on_alert
         # dedup_key → last dispatch timestamp
         self._last_sent: Dict[str, float] = {}
+        # Warn early about common misconfigurations (e.g. placeholder admin_email)
+        config.validate()
 
     # ------------------------------------------------------------------
     # Public

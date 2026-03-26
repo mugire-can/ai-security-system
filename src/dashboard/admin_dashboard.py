@@ -9,6 +9,8 @@ Displays a continuously updating summary of:
 
 The dashboard prints to stdout and refreshes every ``refresh_seconds``.
 It is intentionally dependency-free so it works without any extra packages.
+ANSI colour codes are automatically disabled when stdout is not a real
+terminal (e.g. CI pipelines, Docker log capture, file redirection).
 """
 
 import logging
@@ -45,6 +47,15 @@ def _severity_colour(severity: str) -> str:
     }.get(severity, _WHITE)
 
 
+def _tty_supports_colour() -> bool:
+    """Return True when stdout is a real terminal that supports ANSI codes."""
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    if os.environ.get("NO_COLOR"):
+        return False
+    return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+
 class AdminDashboard:
     """
     Terminal dashboard that renders live stats for the security system.
@@ -75,6 +86,16 @@ class AdminDashboard:
         self._anomaly_count: int = 0
         self._person_count: int = 0
         self._running = False
+        # Only emit ANSI escape codes when writing to a real terminal.
+        self._use_colour: bool = _tty_supports_colour()
+
+    # ------------------------------------------------------------------
+    # Colour helper
+    # ------------------------------------------------------------------
+
+    def _c(self, code: str) -> str:
+        """Return *code* only when ANSI colour is enabled; otherwise ''."""
+        return code if self._use_colour else ""
 
     # ------------------------------------------------------------------
     # Feed methods — called by the processing pipeline
@@ -135,31 +156,31 @@ class AdminDashboard:
     def _print_header(self) -> None:
         now = datetime.now().strftime("%Y-%m-%d  %H:%M:%S")
         w = 72
-        print(_BOLD + _CYAN + "=" * w + _RESET)
+        print(self._c(_BOLD) + self._c(_CYAN) + "=" * w + self._c(_RESET))
         title = f"  AI SECURITY CAMERA SYSTEM  —  {self.venue_name}"
-        print(_BOLD + _CYAN + title.center(w) + _RESET)
-        print(_BOLD + _CYAN + f"  {now}".center(w) + _RESET)
-        print(_BOLD + _CYAN + "=" * w + _RESET)
+        print(self._c(_BOLD) + self._c(_CYAN) + title.center(w) + self._c(_RESET))
+        print(self._c(_BOLD) + self._c(_CYAN) + f"  {now}".center(w) + self._c(_RESET))
+        print(self._c(_BOLD) + self._c(_CYAN) + "=" * w + self._c(_RESET))
 
     def _print_camera_status(self) -> None:
-        print(_BOLD + "\n[CAMERAS]" + _RESET)
+        print(self._c(_BOLD) + "\n[CAMERAS]" + self._c(_RESET))
         if not self._active_cameras:
             print("  (no active cameras)")
         else:
             for cid in self._active_cameras:
-                print(f"  {_GREEN}● {cid}{_RESET}  LIVE")
+                print(f"  {self._c(_GREEN)}● {cid}{self._c(_RESET)}  LIVE")
 
     def _print_live_counts(self) -> None:
-        print(_BOLD + "\n[LIVE COUNTS]" + _RESET)
+        print(self._c(_BOLD) + "\n[LIVE COUNTS]" + self._c(_RESET))
         print(
-            f"  People in frame : {_BOLD}{self._person_count}{_RESET}"
-            f"   Anomalies : {_BOLD}{self._anomaly_count}{_RESET}"
+            f"  People in frame : {self._c(_BOLD)}{self._person_count}{self._c(_RESET)}"
+            f"   Anomalies : {self._c(_BOLD)}{self._anomaly_count}{self._c(_RESET)}"
         )
 
     def _print_alerts(self) -> None:
-        print(_BOLD + "\n[RECENT ALERTS]" + _RESET)
+        print(self._c(_BOLD) + "\n[RECENT ALERTS]" + self._c(_RESET))
         if not self._recent_alerts:
-            print(f"  {_GREEN}No alerts.{_RESET}")
+            print(f"  {self._c(_GREEN)}No alerts.{self._c(_RESET)}")
             return
         print(
             f"  {'TIME':<10}  {'SEVERITY':<10}  {'TYPE':<25}  "
@@ -168,10 +189,10 @@ class AdminDashboard:
         print("  " + "-" * 90)
         for alert in self._recent_alerts:
             ts = datetime.fromtimestamp(alert.timestamp).strftime("%H:%M:%S")
-            colour = _severity_colour(alert.severity)
+            colour = _severity_colour(alert.severity) if self._use_colour else ""
             print(
                 f"  {ts:<10}  "
-                f"{colour}{alert.severity.upper():<10}{_RESET}  "
+                f"{colour}{alert.severity.upper():<10}{self._c(_RESET)}  "
                 f"{alert.alert_type:<25}  "
                 f"{alert.camera_id:<10}  "
                 f"{alert.zone:<15}  "
@@ -179,7 +200,7 @@ class AdminDashboard:
             )
 
     def _print_attendance(self) -> None:
-        print(_BOLD + "\n[TODAY'S ATTENDANCE]" + _RESET)
+        print(self._c(_BOLD) + "\n[TODAY'S ATTENDANCE]" + self._c(_RESET))
         if not self._attendance:
             print("  (no records yet)")
             return
@@ -195,14 +216,15 @@ class AdminDashboard:
             "absent": _RED,
         }
         for rec in self._attendance:
-            col = status_colour.get(rec.get("status", "present"), _WHITE)
+            col = (status_colour.get(rec.get("status", "present"), _WHITE)
+                   if self._use_colour else "")
             print(
                 f"  {rec['name']:<22}  "
                 f"{rec.get('check_in') or '—':<10}  "
                 f"{rec.get('check_out') or '—':<10}  "
                 f"{str(rec.get('duration_min', '')) + ' min':>10}  "
-                f"{col}{rec.get('status', '').upper()}{_RESET}"
+                f"{col}{rec.get('status', '').upper()}{self._c(_RESET)}"
             )
 
     def _print_footer(self) -> None:
-        print("\n" + _BOLD + _CYAN + "  Press Ctrl+C to exit" + _RESET)
+        print("\n" + self._c(_BOLD) + self._c(_CYAN) + "  Press Ctrl+C to exit" + self._c(_RESET))
