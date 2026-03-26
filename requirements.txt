@@ -4,9 +4,7 @@ numpy>=1.24.0
 scipy>=1.11.0
 Pillow>=10.0.0
 
-# AI Models (simplified for Python 3.14 compatibility)
-# Note: Some heavy ML packages have limited Python 3.14 support
-# Using lighter alternatives or disabling in demo mode
+# AI Models - Simplified for Python 3.14
 ultralytics>=8.0.0
 torch>=2.0.0
 torchvision>=0.15.0

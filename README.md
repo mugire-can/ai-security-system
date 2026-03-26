@@ -98,9 +98,17 @@ docker-compose up
 
 ---
 
-## 📋 Configuration
+## 📋 Configuration & Setup Guides
+
+### Quick Configuration
 
 Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
 
 ```bash
 VENUE_TYPE=school                      # school | commercial | workplace
@@ -111,6 +119,33 @@ SMTP_USER=alerts@example.com
 SMTP_PASSWORD=your-app-password
 ALERT_WEBHOOK_URL=https://hooks.slack.com/...
 DATABASE_URL=sqlite:///data/security_system.db  # or postgresql://...
+```
+
+See [.env.example](.env.example) for **all available options** with detailed explanations.
+
+### Setup Guides
+
+| Guide | Purpose | Time |
+| --- | --- | --- |
+| 🧑‍🤝‍🧑 [Face Recognition Setup](guides/FACE_RECOGNITION_SETUP.md) | Configure attendance tracking with face recognition | 10 min |
+| 📊 [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Optimize speed/accuracy, tune for your hardware | 15 min |
+| 🆘 [Troubleshooting](guides/TROUBLESHOOTING.md) | Fix common issues, Gmail/Teams setup | As-needed |
+| 📁 [Database Setup](scripts/setup_database.py) | Initialize or migrate database | 5 min |
+
+### Database Initialization
+
+```bash
+# Initialize database (SQLite or PostgreSQL)
+python scripts/setup_database.py
+
+# Initialize + add test data
+python scripts/setup_database.py --seed
+
+# Backup current database
+python scripts/setup_database.py --backup
+
+# Reset (DANGEROUS - deletes all data!)
+python scripts/setup_database.py --reset
 ```
 
 ---
