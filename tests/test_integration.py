@@ -35,8 +35,7 @@ class TestFileStructure:
         ("services/rust/video_optimizer/src/main.rs", "Rust Main"),
         ("docker-compose.yml", "Docker Compose"),
         ("Dockerfile.python", "Python Dockerfile"),
-        ("ARCHITECTURE.md", "Architecture documentation"),
-        ("DEPLOYMENT.md", "Deployment documentation"),
+        ("README.md", "Project documentation"),
     ])
     def test_required_file_exists(self, rel_path, description):
         assert (_BASE / rel_path).exists(), f"{description} not found: {rel_path}"
@@ -74,12 +73,15 @@ class TestGoServices:
     def test_go_fmt_alert_dispatcher(self):
         """If Go is installed, verify the alert dispatcher is well-formatted."""
         svc_dir = _BASE / "services" / "go" / "alert_dispatcher"
-        result = subprocess.run(
-            ["go", "fmt", "-l", "main.go"],
-            cwd=svc_dir,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                ["go", "fmt", "-l", "main.go"],
+                cwd=svc_dir,
+                capture_output=True,
+                text=True,
+            )
+        except OSError:
+            pytest.skip("Go toolchain check not supported in this environment")
         if result.returncode != 0 and "exec" in (result.stderr or ""):
             pytest.skip("Go not installed")
         # go fmt -l prints files with formatting issues; empty output = clean

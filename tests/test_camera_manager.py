@@ -71,6 +71,29 @@ class TestCameraStream:
         stream.stop()  # should not raise
         assert not stream.is_running
 
+    def test_health_snapshot_reports_offline_when_not_running(self):
+        stream = CameraStream(self._make_config())
+        health = stream.health_snapshot()
+        assert health.status == "offline"
+        assert "not running" in health.reason
+
+    def test_health_snapshot_reports_healthy_after_recent_frame(self):
+        stream = CameraStream(self._make_config())
+        stream.is_running = True
+        stream._last_frame_timestamp = 123.0
+        with patch("src.camera.camera_manager.time.time", return_value=128.0):
+            health = stream.health_snapshot(stall_seconds=10)
+        assert health.status == "healthy"
+
+    def test_health_snapshot_reports_degraded_after_failures(self):
+        stream = CameraStream(self._make_config())
+        stream.is_running = True
+        stream._last_frame_timestamp = 100.0
+        stream._consecutive_failures = 6
+        health = stream.health_snapshot(max_consecutive_failures=5)
+        assert health.status == "degraded"
+        assert health.consecutive_failures == 6
+
 
 # ---------------------------------------------------------------------------
 # CameraManager
@@ -121,3 +144,10 @@ class TestCameraManager:
             result = mgr.draw_info_overlay(frame, "cam-01", "entrance")
         assert result is not frame
         assert result.shape == frame.shape
+
+    def test_get_health_snapshots_returns_one_per_camera(self):
+        cfg = CameraConfig(camera_id="cam-01", source="0", zone="entrance")
+        mgr = CameraManager([cfg])
+        snapshots = mgr.get_health_snapshots()
+        assert len(snapshots) == 1
+        assert snapshots[0].camera_id == "cam-01"

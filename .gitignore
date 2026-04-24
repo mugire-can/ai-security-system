@@ -1,153 +1,56 @@
-# ============================================================================
-# OS & EDITOR
-# ============================================================================
+# OS / editor
 .DS_Store
-.AppleDouble
-.LSOverride
 Thumbs.db
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-.vim/
 
-# ============================================================================
-# NODE.JS / NPM
-# ============================================================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
-yarn.lock
-.npm/
-.node_repl_history
-dist/
-build/
-
-# ============================================================================
-# PYTHON
-# ============================================================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-.pytest_cache/
-.coverage
-htmlcov/
-*.mypy.json
-
-# ============================================================================
-# JAVA / JVM
-# ============================================================================
-*.class
-*.jar
-*.war
-target/
-.classpath
-.project
-.settings/
-.gradle/
-build/
-*.log
-
-# ============================================================================
-# C# / .NET
-# ============================================================================
-bin/
-obj/
-.vs/
-*.user
-*.userprefs
-*.sln.docstates
-.vscode/settings.json
-
-# ============================================================================
-# GO
-# ============================================================================
-*.exe
-*.dll
-*.so
-*.dylib
-
-# ============================================================================
-# RUBY / RAILS
-# ============================================================================
-.bundle/
-Gemfile.lock
-.rspec
-/log
-/tmp
-/db/*.sqlite3
-/public/system
-/coverage/
-
-# ============================================================================
-# ENVIRONMENT VARIABLES
-# ============================================================================
+# Environment files
 .env
 .env.local
 .env.*.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-# ============================================================================
-# RUNTIME / TEMPORARY
-# ============================================================================
-*.pid
-*.seed
-*.pid.lock
-.cache/
-*.tmp
-tmp/
-temp/
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.pytest_tmp/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
 
-# ============================================================================
-# IDE-SPECIFIC
-# ============================================================================
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/*
-!.idea/runConfigurations
-!.idea/inspectionProfiles
-
-# ============================================================================
-# BUILD ARTIFACTS
-# ============================================================================
+# Node / TypeScript
+node_modules/
 dist/
 build/
-.next/
-.nuxt/
-out/
-.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# ============================================================================
-# LOCK FILES (Optional - uncomment if needed)
-# ============================================================================
-# pnpm-lock.yaml
-# bun.lockb
+# Go / Rust / generic binaries
+target/
+*.exe
+*.dll
+*.dylib
+
+# Runtime data
+data/*.db
+data/known_faces/
+data/reports/
+data/snapshots/
+*.pid
+*.tmp
+*.log
+
+# Local/generated reports
+PYTHON_COMPATIBILITY_REPORT.md

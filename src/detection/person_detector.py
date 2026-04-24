@@ -45,6 +45,36 @@ _OBJECT_CLASS_IDS = {
     26,  # handbag
     28,  # suitcase
 }
+_FACILITY_HAZARD_KEYWORDS = {
+    "fire",
+    "flame",
+    "smoke",
+    "water_leak",
+    "water leak",
+    "leak",
+    "flood",
+    "spill",
+    "electrical",
+    "spark",
+    "short_circuit",
+    "arc_flash",
+}
+_THREAT_KEYWORDS = {
+    "weapon",
+    "gun",
+    "knife",
+    "rifle",
+    "pistol",
+    "blade",
+}
+_PERSON_INCIDENT_KEYWORDS = {
+    "fallen_person",
+    "person_down",
+    "fall",
+    "slip",
+    "accident",
+    "injury",
+}
 
 
 @dataclass
@@ -72,7 +102,7 @@ class Detection:
     camera_id: str
     zone: str
     timestamp: float = field(default_factory=time.time)
-    object_type: str = "unknown"   # "person", "animal", "vehicle", "object"
+    object_type: str = "unknown"   # "person", "animal", "vehicle", "object", ...
     class_label: str = "unknown"   # YOLO class name
     confidence: float = 0.0
     bbox: Optional[BoundingBox] = None
@@ -140,7 +170,7 @@ class PersonDetector:
                 h=bh,
             )
 
-            obj_type = self._classify_type(cls_id)
+            obj_type = self._classify_type(cls_id, cls_label)
 
             det = Detection(
                 camera_id=camera_id,
@@ -203,7 +233,8 @@ class PersonDetector:
         return self._model
 
     @staticmethod
-    def _classify_type(cls_id: int) -> str:
+    def _classify_type(cls_id: int, cls_label: str) -> str:
+        label = cls_label.lower().replace("-", "_")
         if cls_id == _PERSON_CLASS_ID:
             return "person"
         if cls_id in _ANIMAL_CLASS_IDS:
@@ -212,6 +243,12 @@ class PersonDetector:
             return "vehicle"
         if cls_id in _OBJECT_CLASS_IDS:
             return "object"
+        if any(keyword in label for keyword in _FACILITY_HAZARD_KEYWORDS):
+            return "facility_hazard"
+        if any(keyword in label for keyword in _THREAT_KEYWORDS):
+            return "threat"
+        if any(keyword in label for keyword in _PERSON_INCIDENT_KEYWORDS):
+            return "person_incident"
         return "unknown"
 
 

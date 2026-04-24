@@ -89,3 +89,33 @@ class TestAnomalyDetector:
     def test_empty_detections_returns_empty(self):
         anomalies = self.detector.detect([])
         assert anomalies == []
+
+    def test_fire_label_creates_facility_anomaly(self):
+        det = _make_detection("facility_hazard", "fire", zone="server-room")
+        anomalies = self.detector.detect([det])
+        assert len(anomalies) == 1
+        assert anomalies[0].anomaly_type == "fire_detected"
+
+    def test_water_leak_label_creates_facility_anomaly(self):
+        det = _make_detection("facility_hazard", "water_leak", zone="basement")
+        anomalies = self.detector.detect([det])
+        assert len(anomalies) == 1
+        assert anomalies[0].anomaly_type == "water_leak_detected"
+
+    def test_electrical_label_creates_hazard_anomaly(self):
+        det = _make_detection("facility_hazard", "electrical_spark", zone="lab")
+        anomalies = self.detector.detect([det])
+        assert len(anomalies) == 1
+        assert anomalies[0].anomaly_type == "electrical_hazard_detected"
+
+    def test_weapon_label_creates_threat_anomaly(self):
+        det = _make_detection("threat", "knife", zone="entrance")
+        anomalies = self.detector.detect([det])
+        assert len(anomalies) == 1
+        assert anomalies[0].anomaly_type == "weapon_detected"
+
+    def test_fallen_person_label_creates_accident_anomaly(self):
+        det = _make_detection("person_incident", "fallen_person", zone="corridor")
+        anomalies = self.detector.detect([det])
+        assert len(anomalies) == 1
+        assert anomalies[0].anomaly_type == "person_down_detected"

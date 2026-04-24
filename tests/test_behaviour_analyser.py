@@ -31,6 +31,22 @@ def _make_person(
     )
 
 
+def _make_fallen_person(
+    cx: int = 320,
+    cy: int = 240,
+    camera_id: str = "cam-01",
+    zone: str = "test-zone",
+) -> Detection:
+    return Detection(
+        camera_id=camera_id,
+        zone=zone,
+        object_type="person",
+        class_label="person",
+        confidence=0.95,
+        bbox=BoundingBox(x=cx - 70, y=cy - 30, w=140, h=60),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Unit tests
 # ---------------------------------------------------------------------------
@@ -131,6 +147,19 @@ class TestBehaviourAnalyser:
         if results:
             assert results[0].activity == "loitering"
             assert results[0].is_suspicious
+
+    def test_fallen_person_detected_after_posture_change(self):
+        analyser = BehaviourAnalyser(confidence_threshold=0.65)
+        upright = _make_person(cx=250, cy=150)
+        analyser.analyse([upright])
+
+        fallen = _make_fallen_person(cx=255, cy=190)
+        results = analyser.analyse([fallen])
+
+        assert results
+        assert results[0].activity == "fallen_person"
+        assert results[0].is_suspicious
+        assert results[0].suspicion_score >= 0.95
 
     def test_suspicion_score_range(self):
         for _ in range(5):
