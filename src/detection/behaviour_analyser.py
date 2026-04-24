@@ -41,6 +41,7 @@ _ACTIVITY_SUSPICION: Dict[str, float] = {
     "loitering": 0.5,
     "theft_attempt": 0.9,
     "fighting": 1.0,
+    "fallen_person": 0.95,
     "sleeping": 0.2,
     "unknown": 0.1,
 }
@@ -72,6 +73,9 @@ class _TrackState:
     last_moved: float = field(default_factory=time.time)
     velocity_history: Deque[float] = field(
         default_factory=lambda: deque(maxlen=30)
+    )
+    aspect_ratio_history: Deque[float] = field(
+        default_factory=lambda: deque(maxlen=15)
     )
     last_activity: str = "unknown"
 
@@ -132,6 +136,8 @@ class BehaviourAnalyser:
 
             centre = centres[idx]
             state.position_history.append(centre)
+            aspect_ratio = self._aspect_ratio(det)
+            state.aspect_ratio_history.append(aspect_ratio)
 
             velocity = self._compute_velocity(state)
             state.velocity_history.append(velocity)
@@ -145,6 +151,7 @@ class BehaviourAnalyser:
 
             activity = self._classify_activity(
                 state=state,
+                detection=det,
                 velocity=avg_velocity,
                 people_centres=centres,
                 own_centre=centre,
@@ -217,11 +224,15 @@ class BehaviourAnalyser:
     def _classify_activity(
         self,
         state: _TrackState,
+        detection: Detection,
         velocity: float,
         people_centres: List[Tuple[int, int]],
         own_centre: Tuple[int, int],
         now: float,
     ) -> str:
+        if self._looks_like_fall(state, detection, own_centre):
+            return "fallen_person"
+
         # Fighting: close proximity to another person + high velocity.
         # NOTE: This is a pure bounding-box heuristic (no pose estimation).
         # Two people standing close and moving normally may trigger a false
@@ -253,9 +264,39 @@ class BehaviourAnalyser:
     @staticmethod
     def _make_notes(state: _TrackState, activity: str, now: float) -> str:
         dwell = int(now - state.first_seen)
-        return (
-            f"Track {state.track_id}: dwell={dwell}s, activity={activity}"
+        posture = (
+            f"{state.aspect_ratio_history[-1]:.2f}"
+            if state.aspect_ratio_history else "n/a"
         )
+        return (
+            f"Track {state.track_id}: dwell={dwell}s, "
+            f"activity={activity}, posture_ratio={posture}"
+        )
+
+    @staticmethod
+    def _aspect_ratio(det: Detection) -> float:
+        if det.bbox is None or det.bbox.h <= 0:
+            return 0.0
+        return det.bbox.w / det.bbox.h
+
+    def _looks_like_fall(
+        self,
+        state: _TrackState,
+        detection: Detection,
+        own_centre: Tuple[int, int],
+    ) -> bool:
+        if detection.bbox is None:
+            return False
+
+        current_ratio = self._aspect_ratio(detection)
+        historical_ratios = list(state.aspect_ratio_history)[:-1]
+        was_upright = any(r < 0.85 for r in historical_ratios)
+        sudden_drop = False
+        if len(state.position_history) >= 2:
+            previous_y = state.position_history[-2][1]
+            sudden_drop = own_centre[1] - previous_y > 25
+
+        return current_ratio >= 1.15 and (was_upright or sudden_drop)
 
     def _prune_tracks(self, now: float, max_age: float = 30.0) -> None:
         stale = [

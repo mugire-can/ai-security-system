@@ -31,6 +31,30 @@ _DEFAULT_ZONE_ALLOWLIST: Dict[str, Set[str]] = {
     "cafeteria": {"person", "object"},  # bags/trays are OK
     "shop-floor": {"person", "object"},
 }
+_SPECIAL_LABEL_RULES = (
+    (("fire", "flame"), "fire_detected", "Possible fire or open flames detected"),
+    (("smoke",), "smoke_detected", "Smoke detected in the monitored area"),
+    (
+        ("water_leak", "water leak", "leak", "flood", "spill"),
+        "water_leak_detected",
+        "Possible water leak or flooding detected",
+    ),
+    (
+        ("electrical", "spark", "short_circuit", "arc_flash"),
+        "electrical_hazard_detected",
+        "Possible electrical hazard detected",
+    ),
+    (
+        ("weapon", "gun", "knife", "rifle", "pistol", "blade"),
+        "weapon_detected",
+        "Possible weapon detected",
+    ),
+    (
+        ("fallen_person", "person_down", "fall", "slip", "accident", "injury"),
+        "person_down_detected",
+        "Possible accident or fallen person detected",
+    ),
+)
 
 
 @dataclass
@@ -89,6 +113,11 @@ class AnomalyDetector:
             key = f"{det.camera_id}:{det.zone}"
             if det.object_type == "person":
                 people_present[key] = True
+                continue
+
+            special = self._build_special_anomaly(det)
+            if special is not None:
+                anomalies.append(special)
                 continue
 
             # Check zone allowlist
@@ -159,3 +188,67 @@ class AnomalyDetector:
             if key in zone.lower():
                 return allowed
         return self._allowlist.get("default", {"person"})
+
+    def _build_special_anomaly(
+        self, det: Detection
+    ) -> Optional[AnomalyResult]:
+        label = det.class_label.lower().replace("-", "_")
+
+        for keywords, anomaly_type, prefix in _SPECIAL_LABEL_RULES:
+            if any(keyword in label for keyword in keywords):
+                return AnomalyResult(
+                    camera_id=det.camera_id,
+                    zone=det.zone,
+                    anomaly_type=anomaly_type,
+                    object_class=det.class_label,
+                    confidence=det.confidence,
+                    description=(
+                        f"{prefix} in zone '{det.zone}' "
+                        f"(label='{det.class_label}')."
+                    ),
+                    bbox=det.bbox.as_tuple() if det.bbox else None,
+                )
+
+        if det.object_type == "facility_hazard":
+            return AnomalyResult(
+                camera_id=det.camera_id,
+                zone=det.zone,
+                anomaly_type="facility_hazard_detected",
+                object_class=det.class_label,
+                confidence=det.confidence,
+                description=(
+                    f"Facility hazard '{det.class_label}' detected "
+                    f"in zone '{det.zone}'."
+                ),
+                bbox=det.bbox.as_tuple() if det.bbox else None,
+            )
+
+        if det.object_type == "threat":
+            return AnomalyResult(
+                camera_id=det.camera_id,
+                zone=det.zone,
+                anomaly_type="security_threat_detected",
+                object_class=det.class_label,
+                confidence=det.confidence,
+                description=(
+                    f"Security threat '{det.class_label}' detected "
+                    f"in zone '{det.zone}'."
+                ),
+                bbox=det.bbox.as_tuple() if det.bbox else None,
+            )
+
+        if det.object_type == "person_incident":
+            return AnomalyResult(
+                camera_id=det.camera_id,
+                zone=det.zone,
+                anomaly_type="person_incident_detected",
+                object_class=det.class_label,
+                confidence=det.confidence,
+                description=(
+                    f"Person incident '{det.class_label}' detected "
+                    f"in zone '{det.zone}'."
+                ),
+                bbox=det.bbox.as_tuple() if det.bbox else None,
+            )
+
+        return None

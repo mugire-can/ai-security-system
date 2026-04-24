@@ -101,6 +101,8 @@ class ProcessingPipeline:
 
         # Frame counter for sub-sampling heavy analysis
         self._frame_counter: dict = {}
+        self._last_health_check = 0.0
+        self._camera_health_state: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -127,6 +129,7 @@ class ProcessingPipeline:
     def _loop(self) -> None:
         while True:
             frames = self._camera_mgr.read_all_frames(timeout=0.05)
+            self._check_camera_health()
             if not frames:
                 time.sleep(0.01)
                 continue
@@ -229,9 +232,7 @@ class ProcessingPipeline:
         self._alerts.build_alert(
             camera_id=frame.camera_id,
             zone=frame.zone,
-            alert_type=beh.activity if beh.activity in {
-                "fighting", "theft_attempt", "loitering", "running"
-            } else "suspicious_behaviour",
+            alert_type=self._resolve_behaviour_alert_type(beh.activity),
             description=(
                 f"{beh.activity.replace('_', ' ').title()} detected. "
                 f"Suspicion score: {beh.suspicion_score:.0%}. "
@@ -249,9 +250,9 @@ class ProcessingPipeline:
         self._alerts.build_alert(
             camera_id=anm.camera_id,
             zone=anm.zone,
-            alert_type="anomaly",
+            alert_type=self._resolve_anomaly_alert_type(anm.anomaly_type),
             description=anm.description,
-            severity="high" if "unattended" in anm.anomaly_type else "medium",
+            severity=self._severity_for_anomaly(anm.anomaly_type),
             snapshot_path=str(snapshot) if snapshot else None,
         )
 
@@ -356,6 +357,42 @@ class ProcessingPipeline:
             s.commit()
 
     # ------------------------------------------------------------------
+    # Camera health
+    # ------------------------------------------------------------------
+
+    def _check_camera_health(self) -> None:
+        now = time.time()
+        if now - self._last_health_check < 1.0:
+            return
+        self._last_health_check = now
+
+        for snapshot in self._camera_mgr.get_health_snapshots(
+            stall_seconds=self._config.health.camera_stall_seconds,
+            max_consecutive_failures=(
+                self._config.health.max_consecutive_read_failures
+            ),
+        ):
+            previous = self._camera_health_state.get(snapshot.camera_id)
+            self._camera_health_state[snapshot.camera_id] = snapshot.status
+
+            if snapshot.status in {"healthy", "starting"}:
+                continue
+            if previous == snapshot.status:
+                continue
+
+            severity = "high" if snapshot.status == "offline" else "medium"
+            self._alerts.build_alert(
+                camera_id=snapshot.camera_id,
+                zone=snapshot.zone,
+                alert_type="other",
+                severity=severity,
+                description=(
+                    f"Camera health issue: {snapshot.reason}. "
+                    f"Source={snapshot.source}"
+                ),
+            )
+
+    # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
 
@@ -368,3 +405,39 @@ class ProcessingPipeline:
         if score >= 0.4:
             return "medium"
         return "low"
+
+    @staticmethod
+    def _resolve_behaviour_alert_type(activity: str) -> str:
+        if activity == "fighting":
+            return "fight"
+        if activity == "loitering":
+            return "loitering"
+        return "suspicious_behaviour"
+
+    @staticmethod
+    def _resolve_anomaly_alert_type(anomaly_type: str) -> str:
+        if anomaly_type == "weapon_detected":
+            return "intrusion"
+        return "anomaly"
+
+    @staticmethod
+    def _severity_for_anomaly(anomaly_type: str) -> str:
+        critical = {
+            "fire_detected",
+            "electrical_hazard_detected",
+            "weapon_detected",
+            "person_down_detected",
+        }
+        high = {
+            "smoke_detected",
+            "water_leak_detected",
+            "facility_hazard_detected",
+            "security_threat_detected",
+            "unattended_object",
+        }
+
+        if anomaly_type in critical:
+            return "critical"
+        if anomaly_type in high:
+            return "high"
+        return "medium"

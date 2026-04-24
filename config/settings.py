@@ -83,6 +83,15 @@ class DetectionConfig:
 
 
 @dataclass
+class SystemHealthConfig:
+    """Runtime health thresholds for camera and service monitoring."""
+    camera_stall_seconds: int = int(os.getenv("CAMERA_STALL_SECONDS", "10"))
+    max_consecutive_read_failures: int = int(
+        os.getenv("MAX_CONSECUTIVE_READ_FAILURES", "5")
+    )
+
+
+@dataclass
 class AttendanceConfig:
     """Roll-call and time-tracking settings."""
     # Directory that holds registered face images, one sub-folder per person
@@ -109,6 +118,7 @@ class AppConfig:
     cameras: List[CameraConfig] = field(default_factory=list)
     alert: AlertConfig = field(default_factory=AlertConfig)
     detection: DetectionConfig = field(default_factory=DetectionConfig)
+    health: SystemHealthConfig = field(default_factory=SystemHealthConfig)
     attendance: AttendanceConfig = field(default_factory=AttendanceConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"

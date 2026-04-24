@@ -8,7 +8,7 @@ any heavy ML dependency.
 
 import logging
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -57,6 +57,20 @@ class TestScoreToSeverity:
         assert ProcessingPipeline._score_to_severity(0.9) == "critical"
         assert ProcessingPipeline._score_to_severity(0.65) == "high"
         assert ProcessingPipeline._score_to_severity(0.4) == "medium"
+
+    def test_behaviour_alert_type_mapping(self):
+        from src.pipeline import ProcessingPipeline
+        assert ProcessingPipeline._resolve_behaviour_alert_type("fighting") == "fight"
+        assert (
+            ProcessingPipeline._resolve_behaviour_alert_type("fallen_person")
+            == "suspicious_behaviour"
+        )
+
+    def test_anomaly_severity_mapping(self):
+        from src.pipeline import ProcessingPipeline
+        assert ProcessingPipeline._severity_for_anomaly("fire_detected") == "critical"
+        assert ProcessingPipeline._severity_for_anomaly("water_leak_detected") == "high"
+        assert ProcessingPipeline._severity_for_anomaly("animal_detected") == "medium"
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +149,31 @@ class TestProcessingPipelineCallbacks:
         pipeline._on_alert_dispatched(alert)
         count = pipeline._db.get_alert_count(acknowledged=False)
         assert count == 1
+
+    def test_check_camera_health_queues_alert_for_offline_camera(self):
+        from src.pipeline import ProcessingPipeline
+        pipeline = ProcessingPipeline(config=_make_config())
+        pipeline._last_health_check = 0.0
+        pipeline._camera_mgr.get_health_snapshots = MagicMock(return_value=[
+            type(
+                "Health",
+                (),
+                {
+                    "camera_id": "cam-01",
+                    "zone": "entrance",
+                    "source": "rtsp://example.local/stream",
+                    "status": "offline",
+                    "reason": "last frame received 30.0s ago",
+                },
+            )()
+        ])
+        with patch.object(pipeline._alerts, "build_alert") as build_alert:
+            with patch("src.pipeline.time.time", return_value=2.0):
+                pipeline._check_camera_health()
+        build_alert.assert_called_once()
+        kwargs = build_alert.call_args.kwargs
+        assert kwargs["alert_type"] == "other"
+        assert kwargs["severity"] == "high"
 
 
 # ---------------------------------------------------------------------------

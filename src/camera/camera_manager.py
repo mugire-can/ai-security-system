@@ -42,6 +42,20 @@ class Frame:
     frame_number: int = 0
 
 
+@dataclass
+class CameraHealth:
+    """Health snapshot for a single camera stream."""
+
+    camera_id: str
+    zone: str
+    source: str
+    is_running: bool
+    status: str
+    reason: str
+    last_frame_timestamp: Optional[float] = None
+    consecutive_failures: int = 0
+
+
 class CameraStream:
     """
     Background thread that continuously reads from a single camera.
@@ -56,6 +70,9 @@ class CameraStream:
         self._stop_event = threading.Event()
         self._frame_count = 0
         self._cap: Any = None  # cv2.VideoCapture, set lazily in start()
+        self._last_frame_timestamp: Optional[float] = None
+        self._consecutive_failures = 0
+        self._last_error = ""
         self.is_running = False
 
     # ------------------------------------------------------------------
@@ -136,6 +153,8 @@ class CameraStream:
 
             ret, raw = self._cap.read()
             if not ret:
+                self._consecutive_failures += 1
+                self._last_error = "frame-read-failed"
                 logger.warning(
                     "Camera '%s': failed to read frame. Retrying in 1 s…",
                     self.config.camera_id,
@@ -144,6 +163,9 @@ class CameraStream:
                 continue
 
             self._frame_count += 1
+            self._last_frame_timestamp = time.time()
+            self._consecutive_failures = 0
+            self._last_error = ""
             frame = Frame(
                 camera_id=self.config.camera_id,
                 zone=self.config.zone,
@@ -157,6 +179,77 @@ class CameraStream:
                 except queue.Empty:
                     pass
             self._queue.put_nowait(frame)
+
+    def health_snapshot(
+        self,
+        stall_seconds: int = 10,
+        max_consecutive_failures: int = 5,
+    ) -> CameraHealth:
+        """Return the current health status of this stream."""
+        now = time.time()
+
+        if not self.is_running:
+            return CameraHealth(
+                camera_id=self.config.camera_id,
+                zone=self.config.zone,
+                source=self.config.source,
+                is_running=False,
+                status="offline",
+                reason="camera stream is not running",
+                last_frame_timestamp=self._last_frame_timestamp,
+                consecutive_failures=self._consecutive_failures,
+            )
+
+        if self._consecutive_failures >= max_consecutive_failures:
+            return CameraHealth(
+                camera_id=self.config.camera_id,
+                zone=self.config.zone,
+                source=self.config.source,
+                is_running=True,
+                status="degraded",
+                reason=(
+                    "camera read failures exceeded threshold "
+                    f"({self._consecutive_failures})"
+                ),
+                last_frame_timestamp=self._last_frame_timestamp,
+                consecutive_failures=self._consecutive_failures,
+            )
+
+        if self._last_frame_timestamp is None:
+            return CameraHealth(
+                camera_id=self.config.camera_id,
+                zone=self.config.zone,
+                source=self.config.source,
+                is_running=True,
+                status="starting",
+                reason="camera stream started but no frame has been received yet",
+                last_frame_timestamp=None,
+                consecutive_failures=self._consecutive_failures,
+            )
+
+        age = now - self._last_frame_timestamp
+        if age > stall_seconds:
+            return CameraHealth(
+                camera_id=self.config.camera_id,
+                zone=self.config.zone,
+                source=self.config.source,
+                is_running=True,
+                status="offline",
+                reason=f"last frame received {age:.1f}s ago",
+                last_frame_timestamp=self._last_frame_timestamp,
+                consecutive_failures=self._consecutive_failures,
+            )
+
+        return CameraHealth(
+            camera_id=self.config.camera_id,
+            zone=self.config.zone,
+            source=self.config.source,
+            is_running=True,
+            status="healthy",
+            reason="camera frames are flowing normally",
+            last_frame_timestamp=self._last_frame_timestamp,
+            consecutive_failures=self._consecutive_failures,
+        )
 
 
 class CameraManager:
@@ -213,6 +306,20 @@ class CameraManager:
 
     def get_stream(self, camera_id: str) -> Optional[CameraStream]:
         return self._streams.get(camera_id)
+
+    def get_health_snapshots(
+        self,
+        stall_seconds: int = 10,
+        max_consecutive_failures: int = 5,
+    ) -> List[CameraHealth]:
+        """Return one health snapshot per configured camera."""
+        return [
+            stream.health_snapshot(
+                stall_seconds=stall_seconds,
+                max_consecutive_failures=max_consecutive_failures,
+            )
+            for stream in self._streams.values()
+        ]
 
     @property
     def active_camera_ids(self) -> List[str]:
