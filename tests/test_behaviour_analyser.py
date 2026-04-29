@@ -9,10 +9,10 @@ import pytest
 from src.detection.behaviour_analyser import BehaviourAnalyser, _euclidean
 from src.detection.person_detector import BoundingBox, Detection
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_person(
     cx: int = 320,
@@ -50,6 +50,7 @@ def _make_fallen_person(
 # ---------------------------------------------------------------------------
 # Unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestEuclidean:
     def test_zero_distance(self):
@@ -114,7 +115,7 @@ class TestBehaviourAnalyser:
         """Two people very close together with high relative movement."""
         analyser = BehaviourAnalyser(confidence_threshold=0.65)
         p1 = _make_person(cx=200, cy=240)
-        p2 = _make_person(cx=210, cy=240)   # only 10 px apart
+        p2 = _make_person(cx=210, cy=240)  # only 10 px apart
 
         # Seed tracker positions
         analyser.analyse([p1, p2])
@@ -126,22 +127,23 @@ class TestBehaviourAnalyser:
         results = analyser.analyse([p1b, p2b])
         activities = {r.activity for r in results}
         # May be "fighting" or "working" depending on track assignment
-        assert all(r.activity in {
-            "fighting", "running", "working", "idle", "studying", "loitering"
-        } for r in results)
+        assert all(
+            r.activity in {"fighting", "running", "working", "idle", "studying", "loitering"}
+            for r in results
+        )
 
     def test_loitering_after_threshold(self):
         """A person that hasn't moved for longer than the threshold is flagged."""
         analyser = BehaviourAnalyser(
             confidence_threshold=0.5,
-            loitering_threshold_seconds=0,   # immediate threshold for testing
+            loitering_threshold_seconds=0,  # immediate threshold for testing
         )
         det = _make_person(cx=320, cy=240)
         analyser.analyse([det])
 
         # Manipulate last_moved time to simulate long dwell
         for state in analyser._tracks.values():
-            state.last_moved = time.time() - 200   # 200 s ago
+            state.last_moved = time.time() - 200  # 200 s ago
 
         results = analyser.analyse([det])
         if results:

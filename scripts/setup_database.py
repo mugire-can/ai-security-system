@@ -15,21 +15,21 @@ Usage:
 import argparse
 import os
 import sys
-from pathlib import Path
-from datetime import datetime, timedelta
 from contextlib import contextmanager
+from datetime import datetime, timedelta
+from pathlib import Path
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config.settings import DatabaseConfig, AppConfig
+from config.settings import AppConfig, DatabaseConfig
 from src.database.db_manager import (
+    AlertRecord,
+    AnomalyEvent,
+    AttendanceRecord,
+    BehaviourEvent,
     DatabaseManager,
     DetectionEvent,
-    BehaviourEvent,
-    AnomalyEvent,
-    AlertRecord,
-    AttendanceRecord,
 )
 
 
@@ -37,9 +37,7 @@ class DatabaseSetup:
     """Handle database initialization and migration."""
 
     def __init__(self, db_url: str = None):
-        self.db_url = db_url or os.getenv(
-            "DATABASE_URL", "sqlite:///data/security_system.db"
-        )
+        self.db_url = db_url or os.getenv("DATABASE_URL", "sqlite:///data/security_system.db")
         self.db_manager = DatabaseManager(self.db_url)
         self.is_sqlite = "sqlite" in self.db_url
         self.is_postgres = "postgresql" in self.db_url
@@ -95,6 +93,7 @@ class DatabaseSetup:
         try:
             print("🔄 Dropping all tables...")
             from src.database.db_manager import Base
+
             Base.metadata.drop_all(bind=self.db_manager._engine)
 
             print("🔄 Recreating schema...")
@@ -246,7 +245,7 @@ class DatabaseSetup:
 
             # Sample attendance records
             from datetime import time
-            
+
             attendance = [
                 AttendanceRecord(
                     person_name="Alice Smith",
@@ -302,6 +301,7 @@ class DatabaseSetup:
                 pass
             print(f"❌ Error seeding test data: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
@@ -395,9 +395,7 @@ Examples:
         action="store_true",
         help="Create backup of current database",
     )
-    parser.add_argument(
-        "--output", default=None, help="Output file for backup (with --backup)"
-    )
+    parser.add_argument("--output", default=None, help="Output file for backup (with --backup)")
     parser.add_argument(
         "--no-ask",
         action="store_true",

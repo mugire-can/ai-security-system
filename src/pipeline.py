@@ -143,15 +143,9 @@ class ProcessingPipeline:
                 anomaly_count_total += a
 
             # Update dashboard
-            self._dashboard.update_cameras(
-                self._camera_mgr.active_camera_ids
-            )
-            self._dashboard.update_counts(
-                person_count_total, anomaly_count_total
-            )
-            self._dashboard.update_attendance(
-                self._tracker.get_today_summary()
-            )
+            self._dashboard.update_cameras(self._camera_mgr.active_camera_ids)
+            self._dashboard.update_counts(person_count_total, anomaly_count_total)
+            self._dashboard.update_attendance(self._tracker.get_today_summary())
 
     def _process_frame(self, frame: Frame) -> tuple[int, int]:
         """
@@ -163,9 +157,7 @@ class ProcessingPipeline:
         self._frame_counter[frame.camera_id] = cnt
 
         # 1. Object detection
-        detections: List[Detection] = self._detector.detect(
-            frame.data, frame.camera_id, frame.zone
-        )
+        detections: List[Detection] = self._detector.detect(frame.data, frame.camera_id, frame.zone)
 
         # 2. Face recognition — only every N frames (expensive)
         if cnt % self._config.detection.analysis_frame_interval == 0:
@@ -174,14 +166,10 @@ class ProcessingPipeline:
         # 3. Attendance tracking
         for det in detections:
             if det.object_type == "person" and det.person_name:
-                self._tracker.record_sighting(
-                    det.person_name, frame.camera_id, frame.zone
-                )
+                self._tracker.record_sighting(det.person_name, frame.camera_id, frame.zone)
 
         # 4. Behaviour analysis
-        behaviours: List[BehaviourResult] = self._behaviour.analyse(
-            detections, frame.data
-        )
+        behaviours: List[BehaviourResult] = self._behaviour.analyse(detections, frame.data)
         for beh in behaviours:
             if beh.is_suspicious:
                 self._handle_suspicious_behaviour(beh, frame)
@@ -207,14 +195,12 @@ class ProcessingPipeline:
     # Face recognition
     # ------------------------------------------------------------------
 
-    def _identify_people(
-        self, frame: Frame, detections: List[Detection]
-    ) -> None:
+    def _identify_people(self, frame: Frame, detections: List[Detection]) -> None:
         for det in detections:
             if det.object_type != "person" or det.bbox is None:
                 continue
             bx, by, bw, bh = det.bbox.as_tuple()
-            crop = frame.data[by: by + bh, bx: bx + bw]
+            crop = frame.data[by : by + bh, bx : bx + bw]
             if crop.size == 0:
                 continue
             result = self._roll_call.identify(crop)
@@ -225,9 +211,7 @@ class ProcessingPipeline:
     # Alerting
     # ------------------------------------------------------------------
 
-    def _handle_suspicious_behaviour(
-        self, beh: BehaviourResult, frame: Frame
-    ) -> None:
+    def _handle_suspicious_behaviour(self, beh: BehaviourResult, frame: Frame) -> None:
         snapshot = self._save_snapshot(frame) if self._save_snapshots else None
         self._alerts.build_alert(
             camera_id=frame.camera_id,
@@ -243,9 +227,7 @@ class ProcessingPipeline:
             snapshot_path=str(snapshot) if snapshot else None,
         )
 
-    def _handle_anomaly(
-        self, anm: AnomalyResult, frame: Frame
-    ) -> None:
+    def _handle_anomaly(self, anm: AnomalyResult, frame: Frame) -> None:
         snapshot = self._save_snapshot(frame) if self._save_snapshots else None
         self._alerts.build_alert(
             camera_id=anm.camera_id,
@@ -264,17 +246,11 @@ class ProcessingPipeline:
         self._dashboard.add_alert(alert)
         self._persist_alert(alert)
 
-    def _on_checkin(
-        self, name: str, camera_id: str, zone: str, ts: datetime
-    ) -> None:
+    def _on_checkin(self, name: str, camera_id: str, zone: str, ts: datetime) -> None:
         logger.info("Check-in: %s at %s", name, ts.strftime("%H:%M:%S"))
 
-    def _on_checkout(
-        self, name: str, camera_id: str, zone: str, ts: datetime, dur: float
-    ) -> None:
-        logger.info(
-            "Check-out: %s at %s (%.0f min)", name, ts.strftime("%H:%M:%S"), dur
-        )
+    def _on_checkout(self, name: str, camera_id: str, zone: str, ts: datetime, dur: float) -> None:
+        logger.info("Check-out: %s at %s (%.0f min)", name, ts.strftime("%H:%M:%S"), dur)
 
     # ------------------------------------------------------------------
     # Snapshot saving
@@ -283,6 +259,7 @@ class ProcessingPipeline:
     def _save_snapshot(self, frame: Frame) -> Optional[Path]:
         try:
             import cv2
+
             ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             path = self._snapshot_dir / f"{frame.camera_id}_{ts}.jpg"
             cv2.imwrite(str(path), frame.data)
@@ -368,9 +345,7 @@ class ProcessingPipeline:
 
         for snapshot in self._camera_mgr.get_health_snapshots(
             stall_seconds=self._config.health.camera_stall_seconds,
-            max_consecutive_failures=(
-                self._config.health.max_consecutive_read_failures
-            ),
+            max_consecutive_failures=(self._config.health.max_consecutive_read_failures),
         ):
             previous = self._camera_health_state.get(snapshot.camera_id)
             self._camera_health_state[snapshot.camera_id] = snapshot.status
@@ -387,8 +362,7 @@ class ProcessingPipeline:
                 alert_type="other",
                 severity=severity,
                 description=(
-                    f"Camera health issue: {snapshot.reason}. "
-                    f"Source={snapshot.source}"
+                    f"Camera health issue: {snapshot.reason}. " f"Source={snapshot.source}"
                 ),
             )
 

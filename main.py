@@ -20,7 +20,7 @@ from pathlib import Path
 # Ensure the project root is on the path when run directly
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config.settings import AppConfig, CameraConfig, DEFAULT_CONFIG, VenueType
+from config.settings import DEFAULT_CONFIG, AppConfig, CameraConfig, VenueType
 
 
 def _configure_logging(debug: bool = False) -> None:
@@ -36,9 +36,7 @@ def _configure_logging(debug: bool = False) -> None:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="AI Security Camera System"
-    )
+    parser = argparse.ArgumentParser(description="AI Security Camera System")
     parser.add_argument(
         "--demo",
         action="store_true",
@@ -58,10 +56,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--camera-source",
         default=None,
-        help=(
-            "Camera source: integer index (0, 1, …), "
-            "RTSP URL, or path to a video file"
-        ),
+        help=("Camera source: integer index (0, 1, …), " "RTSP URL, or path to a video file"),
     )
     parser.add_argument(
         "--debug",
@@ -102,6 +97,7 @@ def _run_demo(config: AppConfig) -> None:
     Injects mock frames, detections, and alerts to show the dashboard.
     """
     import numpy as np
+
     from src.alerts.alert_manager import Alert, AlertManager
     from src.attendance.time_tracker import AttendanceTracker
     from src.dashboard.admin_dashboard import AdminDashboard
@@ -124,6 +120,7 @@ def _run_demo(config: AppConfig) -> None:
 
     # Simulate some attendance
     from datetime import datetime
+
     for name in ["Alice Smith", "Bob Jones", "Carol White"]:
         tracker.record_sighting(name, "cam-01", "classroom-A")
     dashboard.update_attendance(tracker.get_today_summary())

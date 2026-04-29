@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Alert:
     """
@@ -41,8 +42,8 @@ class Alert:
 
     camera_id: str
     zone: str
-    alert_type: str            # matches AlertRecord.alert_type enum values
-    severity: str              # "low" | "medium" | "high" | "critical"
+    alert_type: str  # matches AlertRecord.alert_type enum values
+    severity: str  # "low" | "medium" | "high" | "critical"
     description: str
     person_name: Optional[str] = None
     snapshot_path: Optional[str] = None
@@ -56,6 +57,7 @@ class Alert:
 # ---------------------------------------------------------------------------
 # AlertManager
 # ---------------------------------------------------------------------------
+
 
 class AlertManager:
     """
@@ -95,9 +97,7 @@ class AlertManager:
         now = time.time()
         last = self._last_sent.get(alert.dedup_key, 0.0)
         if now - last < self._config.alert_cooldown_seconds:
-            logger.debug(
-                "Alert suppressed (cooldown): %s", alert.dedup_key
-            )
+            logger.debug("Alert suppressed (cooldown): %s", alert.dedup_key)
             return False
 
         self._last_sent[alert.dedup_key] = now
@@ -143,9 +143,7 @@ class AlertManager:
     def pending_count(self, since_seconds: float = 3600.0) -> int:
         """Count how many unique alert types have been dispatched recently."""
         now = time.time()
-        return sum(
-            1 for t in self._last_sent.values() if now - t <= since_seconds
-        )
+        return sum(1 for t in self._last_sent.values() if now - t <= since_seconds)
 
     # ------------------------------------------------------------------
     # Dispatchers
@@ -167,8 +165,7 @@ class AlertManager:
         """Send an email notification to the admin."""
         cfg = self._config
         subject = (
-            f"[{alert.severity.upper()}] Security Alert: "
-            f"{alert.alert_type} @ {alert.zone}"
+            f"[{alert.severity.upper()}] Security Alert: " f"{alert.alert_type} @ {alert.zone}"
         )
         body = self._build_email_body(alert)
         msg = MIMEMultipart("alternative")
@@ -212,9 +209,7 @@ class AlertManager:
         )
         try:
             with urllib.request.urlopen(req, timeout=5) as resp:
-                logger.info(
-                    "Webhook alert sent (status %s).", resp.status
-                )
+                logger.info("Webhook alert sent (status %s).", resp.status)
             return True
         except (urllib.error.URLError, OSError) as exc:
             logger.error("Failed to send webhook alert: %s", exc)

@@ -63,8 +63,8 @@ class AnomalyResult:
 
     camera_id: str
     zone: str
-    anomaly_type: str           # e.g. "animal_detected", "unattended_object"
-    object_class: str           # YOLO class label
+    anomaly_type: str  # e.g. "animal_detected", "unattended_object"
+    object_class: str  # YOLO class label
     confidence: float
     description: str
     bbox: Optional[Tuple[int, int, int, int]] = None
@@ -96,9 +96,7 @@ class AnomalyDetector:
     # Public
     # ------------------------------------------------------------------
 
-    def detect(
-        self, detections: List[Detection]
-    ) -> List[AnomalyResult]:
+    def detect(self, detections: List[Detection]) -> List[AnomalyResult]:
         """
         Inspect *detections* and return anomaly results.
 
@@ -107,7 +105,7 @@ class AnomalyDetector:
         anomalies: List[AnomalyResult] = []
         now = time.time()
 
-        people_present: Dict[str, bool] = {}   # camera_id+zone → any person?
+        people_present: Dict[str, bool] = {}  # camera_id+zone → any person?
 
         for det in detections:
             key = f"{det.camera_id}:{det.zone}"
@@ -150,16 +148,11 @@ class AnomalyDetector:
                 key = f"{cam_id}:{zone}"
                 any_person = people_present.get(key, False)
                 # Keep only entries younger than 10 min
-                zone_map[zone] = [
-                    (d, t) for d, t in entries if now - t < 600
-                ]
+                zone_map[zone] = [(d, t) for d, t in entries if now - t < 600]
                 if any_person:
-                    continue   # Someone is there — not abandoned
+                    continue  # Someone is there — not abandoned
                 for det, first_seen in zone_map[zone]:
-                    if (
-                        det.object_type == "object"
-                        and now - first_seen > self._abandoned_threshold
-                    ):
+                    if det.object_type == "object" and now - first_seen > self._abandoned_threshold:
                         anomalies.append(
                             AnomalyResult(
                                 camera_id=cam_id,
@@ -189,9 +182,7 @@ class AnomalyDetector:
                 return allowed
         return self._allowlist.get("default", {"person"})
 
-    def _build_special_anomaly(
-        self, det: Detection
-    ) -> Optional[AnomalyResult]:
+    def _build_special_anomaly(self, det: Detection) -> Optional[AnomalyResult]:
         label = det.class_label.lower().replace("-", "_")
 
         for keywords, anomaly_type, prefix in _SPECIAL_LABEL_RULES:
@@ -202,10 +193,7 @@ class AnomalyDetector:
                     anomaly_type=anomaly_type,
                     object_class=det.class_label,
                     confidence=det.confidence,
-                    description=(
-                        f"{prefix} in zone '{det.zone}' "
-                        f"(label='{det.class_label}')."
-                    ),
+                    description=(f"{prefix} in zone '{det.zone}' " f"(label='{det.class_label}')."),
                     bbox=det.bbox.as_tuple() if det.bbox else None,
                 )
 
@@ -217,8 +205,7 @@ class AnomalyDetector:
                 object_class=det.class_label,
                 confidence=det.confidence,
                 description=(
-                    f"Facility hazard '{det.class_label}' detected "
-                    f"in zone '{det.zone}'."
+                    f"Facility hazard '{det.class_label}' detected " f"in zone '{det.zone}'."
                 ),
                 bbox=det.bbox.as_tuple() if det.bbox else None,
             )
@@ -231,8 +218,7 @@ class AnomalyDetector:
                 object_class=det.class_label,
                 confidence=det.confidence,
                 description=(
-                    f"Security threat '{det.class_label}' detected "
-                    f"in zone '{det.zone}'."
+                    f"Security threat '{det.class_label}' detected " f"in zone '{det.zone}'."
                 ),
                 bbox=det.bbox.as_tuple() if det.bbox else None,
             )
@@ -245,8 +231,7 @@ class AnomalyDetector:
                 object_class=det.class_label,
                 confidence=det.confidence,
                 description=(
-                    f"Person incident '{det.class_label}' detected "
-                    f"in zone '{det.zone}'."
+                    f"Person incident '{det.class_label}' detected " f"in zone '{det.zone}'."
                 ),
                 bbox=det.bbox.as_tuple() if det.bbox else None,
             )

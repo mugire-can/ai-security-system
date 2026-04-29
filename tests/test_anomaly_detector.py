@@ -46,8 +46,9 @@ class TestAnomalyDetector:
     def test_vehicle_in_classroom_is_anomaly(self):
         det = _make_detection("vehicle", "car", zone="classroom")
         anomalies = self.detector.detect([det])
-        assert any(a.object_type if hasattr(a, "object_type") else a.anomaly_type
-                   for a in anomalies)
+        assert any(
+            a.object_type if hasattr(a, "object_type") else a.anomaly_type for a in anomalies
+        )
 
     def test_vehicle_in_entrance_allowed(self):
         det = _make_detection("vehicle", "car", zone="entrance")
