@@ -81,7 +81,10 @@ class AttendanceTracker:
             }
             logger.info(
                 "CHECK-IN  | %-20s | %s | camera=%-8s zone=%s",
-                person_name, now.strftime("%H:%M:%S"), camera_id, zone,
+                person_name,
+                now.strftime("%H:%M:%S"),
+                camera_id,
+                zone,
             )
             if self._on_checkin:
                 self._on_checkin(person_name, camera_id, zone, now)
@@ -120,7 +123,11 @@ class AttendanceTracker:
 
         logger.info(
             "CHECK-OUT | %-20s | %s | camera=%-8s zone=%-10s duration=%.0f min",
-            person_name, now.strftime("%H:%M:%S"), camera_id, zone, duration,
+            person_name,
+            now.strftime("%H:%M:%S"),
+            camera_id,
+            zone,
+            duration,
         )
         if self._on_checkout:
             self._on_checkout(person_name, camera_id, zone, now, duration)
@@ -172,19 +179,19 @@ class AttendanceTracker:
         expected = dt.replace(
             hour=self._work_start.hour,
             minute=self._work_start.minute,
-            second=0, microsecond=0,
+            second=0,
+            microsecond=0,
         )
         if dt > expected + timedelta(minutes=15):
             return "late"
         return "present"
 
-    def _compute_checkout_status(
-        self, check_in: datetime, check_out: datetime
-    ) -> str:
+    def _compute_checkout_status(self, check_in: datetime, check_out: datetime) -> str:
         expected_end = check_out.replace(
             hour=self._work_end.hour,
             minute=self._work_end.minute,
-            second=0, microsecond=0,
+            second=0,
+            microsecond=0,
         )
         check_in_status = self._compute_checkin_status(check_in)
         if check_out < expected_end - timedelta(minutes=15):

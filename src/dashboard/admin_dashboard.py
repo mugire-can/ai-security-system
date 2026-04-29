@@ -204,10 +204,7 @@ class AdminDashboard:
         if not self._attendance:
             print("  (no records yet)")
             return
-        print(
-            f"  {'NAME':<22}  {'IN':<10}  {'OUT':<10}  "
-            f"{'DURATION':>10}  STATUS"
-        )
+        print(f"  {'NAME':<22}  {'IN':<10}  {'OUT':<10}  " f"{'DURATION':>10}  STATUS")
         print("  " + "-" * 70)
         status_colour = {
             "present": _GREEN,
@@ -216,8 +213,9 @@ class AdminDashboard:
             "absent": _RED,
         }
         for rec in self._attendance:
-            col = (status_colour.get(rec.get("status", "present"), _WHITE)
-                   if self._use_colour else "")
+            col = (
+                status_colour.get(rec.get("status", "present"), _WHITE) if self._use_colour else ""
+            )
             print(
                 f"  {rec['name']:<22}  "
                 f"{rec.get('check_in') or '—':<10}  "

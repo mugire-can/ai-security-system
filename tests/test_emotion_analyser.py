@@ -26,32 +26,49 @@ def _make_detection(
 # EmotionResult dataclass
 # ---------------------------------------------------------------------------
 
+
 class TestEmotionResult:
     def test_negative_emotion_flag(self):
         r = EmotionResult(
-            camera_id="c", zone="z", person_name=None,
-            emotion="angry", confidence=0.9, is_negative=True,
+            camera_id="c",
+            zone="z",
+            person_name=None,
+            emotion="angry",
+            confidence=0.9,
+            is_negative=True,
         )
         assert r.is_negative is True
 
     def test_positive_emotion_flag(self):
         r = EmotionResult(
-            camera_id="c", zone="z", person_name=None,
-            emotion="happy", confidence=0.8, is_negative=False,
+            camera_id="c",
+            zone="z",
+            person_name=None,
+            emotion="happy",
+            confidence=0.8,
+            is_negative=False,
         )
         assert r.is_negative is False
 
     def test_timestamp_set_automatically(self):
         r = EmotionResult(
-            camera_id="c", zone="z", person_name=None,
-            emotion="neutral", confidence=0.5, is_negative=False,
+            camera_id="c",
+            zone="z",
+            person_name=None,
+            emotion="neutral",
+            confidence=0.5,
+            is_negative=False,
         )
         assert r.timestamp > 0
 
     def test_bbox_optional(self):
         r = EmotionResult(
-            camera_id="c", zone="z", person_name="Alice",
-            emotion="sad", confidence=0.6, is_negative=True,
+            camera_id="c",
+            zone="z",
+            person_name="Alice",
+            emotion="sad",
+            confidence=0.6,
+            is_negative=True,
         )
         assert r.bbox is None
 
@@ -59,6 +76,7 @@ class TestEmotionResult:
 # ---------------------------------------------------------------------------
 # EmotionAnalyser
 # ---------------------------------------------------------------------------
+
 
 class TestEmotionAnalyser:
     def test_analyse_empty_detections_returns_empty(self):
@@ -98,6 +116,7 @@ class TestEmotionAnalyser:
         """When DeepFace is absent, every result must carry emotion='unknown'."""
         import sys
         from unittest.mock import patch
+
         analyser = EmotionAnalyser(frame_interval=1)
         frame = np.zeros((60, 60, 3), dtype=np.uint8)
         dets = [_make_detection("person")]

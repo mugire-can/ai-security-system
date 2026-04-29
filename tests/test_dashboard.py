@@ -29,6 +29,7 @@ def _make_alert(severity: str = "medium", alert_type: str = "loitering") -> Aler
 # TTY detection helper
 # ---------------------------------------------------------------------------
 
+
 class TestTtySupportsColour:
     def test_no_color_env_disables_colour(self):
         with patch.dict("os.environ", {"NO_COLOR": "1"}, clear=False):
@@ -48,6 +49,7 @@ class TestTtySupportsColour:
 # ---------------------------------------------------------------------------
 # AdminDashboard
 # ---------------------------------------------------------------------------
+
 
 class TestAdminDashboard:
     def test_init_defaults(self):
@@ -145,15 +147,17 @@ class TestAdminDashboard:
     def test_render_with_attendance(self, capsys):
         dash = AdminDashboard()
         dash._use_colour = False
-        dash.update_attendance([
-            {
-                "name": "Alice Smith",
-                "status": "present",
-                "check_in": "09:00",
-                "check_out": "17:00",
-                "duration_min": 480,
-            }
-        ])
+        dash.update_attendance(
+            [
+                {
+                    "name": "Alice Smith",
+                    "status": "present",
+                    "check_in": "09:00",
+                    "check_out": "17:00",
+                    "duration_min": 480,
+                }
+            ]
+        )
         with patch("os.system"):
             dash.render()
         out = capsys.readouterr().out
