@@ -27,6 +27,19 @@ class TestFileStructure:
     @pytest.mark.parametrize(
         "rel_path,description",
         [
+            (".github/CODEOWNERS", "CODEOWNERS"),
+            (".github/dependabot.yml", "Dependabot configuration"),
+            (".github/pull_request_template.md", "Pull request template"),
+            (".github/ISSUE_TEMPLATE/bug_report.yml", "Bug report issue form"),
+            (".github/ISSUE_TEMPLATE/feature_request.yml", "Feature request issue form"),
+            (".pre-commit-config.yaml", "Pre-commit configuration"),
+            ("Taskfile.yml", "Task runner configuration"),
+            ("SECURITY.md", "Security policy"),
+            ("CHANGELOG.md", "Changelog"),
+            (".env.production.example", "Production environment template"),
+            ("docker-compose.prod.yml", "Production Docker Compose file"),
+            ("evaluation/manifest.example.json", "Evaluation manifest example"),
+            ("scripts/validate_evaluation_manifest.py", "Evaluation validation script"),
             ("services/go/alert_dispatcher/main.go", "Go Alert Dispatcher"),
             ("services/go/alert_dispatcher/go.mod", "Go Alert Dispatcher Module"),
             ("services/go/camera_streamer/main.go", "Go Camera Streamer"),
@@ -39,6 +52,7 @@ class TestFileStructure:
             ("docker-compose.yml", "Docker Compose"),
             ("Dockerfile.python", "Python Dockerfile"),
             ("README.md", "Project documentation"),
+            (".github/workflows/release.yml", "Release workflow"),
         ],
     )
     def test_required_file_exists(self, rel_path, description):
@@ -169,3 +183,16 @@ class TestDockerSetup:
     )
     def test_dockerfile_exists(self, dockerfile_path):
         assert (_BASE / dockerfile_path).exists(), f"Missing: {dockerfile_path}"
+
+
+# ---------------------------------------------------------------------------
+# Evaluation scaffold checks
+# ---------------------------------------------------------------------------
+
+
+class TestEvaluationScaffold:
+    def test_manifest_example_is_valid(self):
+        from scripts.validate_evaluation_manifest import validate_manifest
+
+        errors = validate_manifest(_BASE / "evaluation" / "manifest.example.json")
+        assert errors == []

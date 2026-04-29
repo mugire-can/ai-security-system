@@ -14,7 +14,7 @@ terminal (e.g. CI pipelines, Docker log capture, file redirection).
 """
 
 import logging
-import os
+import subprocess  # nosec B404
 import sys
 import time
 from datetime import datetime
@@ -122,7 +122,10 @@ class AdminDashboard:
 
     def render(self) -> None:
         """Clear the terminal and print the current dashboard state."""
-        os.system("cls" if sys.platform == "win32" else "clear")
+        subprocess.run(  # nosec B603
+            ["cmd", "/c", "cls"] if sys.platform == "win32" else ["clear"],
+            check=False,
+        )
         self._print_header()
         self._print_camera_status()
         self._print_live_counts()

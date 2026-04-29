@@ -1,0 +1,9 @@
+# Default ownership
+* @mugire-can
+
+# Critical areas
+.github/ @mugire-can
+config/ @mugire-can
+src/ @mugire-can
+services/ @mugire-can
+tests/ @mugire-can
