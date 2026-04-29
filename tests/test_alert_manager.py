@@ -15,10 +15,10 @@ def _make_manager(cooldown: int = 60) -> AlertManager:
         admin_email="admin@test.com",
         smtp_host="localhost",
         smtp_port=587,
-        smtp_user="",           # empty → email dispatch skipped
+        smtp_user="",  # empty → email dispatch skipped
         smtp_password="",
         alert_cooldown_seconds=cooldown,
-        webhook_url="",         # empty → webhook dispatch skipped
+        webhook_url="",  # empty → webhook dispatch skipped
     )
     return AlertManager(config=cfg)
 
@@ -26,23 +26,35 @@ def _make_manager(cooldown: int = 60) -> AlertManager:
 class TestAlert:
     def test_dedup_key_unique_per_camera_zone_type(self):
         a1 = Alert(
-            camera_id="cam-01", zone="entrance",
-            alert_type="loitering", severity="medium", description="test"
+            camera_id="cam-01",
+            zone="entrance",
+            alert_type="loitering",
+            severity="medium",
+            description="test",
         )
         a2 = Alert(
-            camera_id="cam-02", zone="entrance",
-            alert_type="loitering", severity="medium", description="test"
+            camera_id="cam-02",
+            zone="entrance",
+            alert_type="loitering",
+            severity="medium",
+            description="test",
         )
         assert a1.dedup_key != a2.dedup_key
 
     def test_dedup_key_same_for_same_params(self):
         a1 = Alert(
-            camera_id="cam-01", zone="hall",
-            alert_type="fight", severity="high", description="test1"
+            camera_id="cam-01",
+            zone="hall",
+            alert_type="fight",
+            severity="high",
+            description="test1",
         )
         a2 = Alert(
-            camera_id="cam-01", zone="hall",
-            alert_type="fight", severity="high", description="test2"
+            camera_id="cam-01",
+            zone="hall",
+            alert_type="fight",
+            severity="high",
+            description="test2",
         )
         assert a1.dedup_key == a2.dedup_key
 
@@ -51,8 +63,10 @@ class TestAlertManager:
     def test_dispatch_returns_true_first_time(self):
         mgr = _make_manager(cooldown=60)
         alert = Alert(
-            camera_id="cam-01", zone="entrance",
-            alert_type="loitering", severity="medium",
+            camera_id="cam-01",
+            zone="entrance",
+            alert_type="loitering",
+            severity="medium",
             description="test alert",
         )
         assert mgr.dispatch(alert) is True
@@ -60,18 +74,22 @@ class TestAlertManager:
     def test_dispatch_returns_false_within_cooldown(self):
         mgr = _make_manager(cooldown=60)
         alert = Alert(
-            camera_id="cam-01", zone="entrance",
-            alert_type="loitering", severity="medium",
+            camera_id="cam-01",
+            zone="entrance",
+            alert_type="loitering",
+            severity="medium",
             description="test",
         )
         mgr.dispatch(alert)
         assert mgr.dispatch(alert) is False
 
     def test_dispatch_allowed_after_cooldown(self):
-        mgr = _make_manager(cooldown=0)   # zero cooldown
+        mgr = _make_manager(cooldown=0)  # zero cooldown
         alert = Alert(
-            camera_id="cam-01", zone="entrance",
-            alert_type="intrusion", severity="high",
+            camera_id="cam-01",
+            zone="entrance",
+            alert_type="intrusion",
+            severity="high",
             description="test",
         )
         assert mgr.dispatch(alert) is True
@@ -81,12 +99,18 @@ class TestAlertManager:
     def test_different_zones_not_deduplicated(self):
         mgr = _make_manager(cooldown=60)
         a1 = Alert(
-            camera_id="cam-01", zone="entrance",
-            alert_type="loitering", severity="medium", description="t"
+            camera_id="cam-01",
+            zone="entrance",
+            alert_type="loitering",
+            severity="medium",
+            description="t",
         )
         a2 = Alert(
-            camera_id="cam-01", zone="cafeteria",
-            alert_type="loitering", severity="medium", description="t"
+            camera_id="cam-01",
+            zone="cafeteria",
+            alert_type="loitering",
+            severity="medium",
+            description="t",
         )
         assert mgr.dispatch(a1) is True
         assert mgr.dispatch(a2) is True
@@ -104,8 +128,10 @@ class TestAlertManager:
             on_alert=lambda a: received.append(a),
         )
         alert = Alert(
-            camera_id="cam-01", zone="hall",
-            alert_type="fight", severity="critical",
+            camera_id="cam-01",
+            zone="hall",
+            alert_type="fight",
+            severity="critical",
             description="fight detected",
         )
         mgr.dispatch(alert)
@@ -136,11 +162,15 @@ class TestAlertManager:
     def test_pending_count_increases_with_alerts(self):
         mgr = _make_manager(cooldown=0)
         for i in range(3):
-            mgr.dispatch(Alert(
-                camera_id=f"cam-{i}", zone="zone",
-                alert_type="loitering", severity="low",
-                description="x",
-            ))
+            mgr.dispatch(
+                Alert(
+                    camera_id=f"cam-{i}",
+                    zone="zone",
+                    alert_type="loitering",
+                    severity="low",
+                    description="x",
+                )
+            )
             time.sleep(0.01)
         assert mgr.pending_count(since_seconds=60) == 3
 
@@ -148,8 +178,10 @@ class TestAlertManager:
         mgr = _make_manager(cooldown=0)
         for sev in ("low", "medium", "high", "critical"):
             a = Alert(
-                camera_id="c", zone="z",
-                alert_type="other", severity=sev,
+                camera_id="c",
+                zone="z",
+                alert_type="other",
+                severity=sev,
                 description="test",
             )
             assert mgr.dispatch(a) is True

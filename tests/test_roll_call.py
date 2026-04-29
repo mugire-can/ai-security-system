@@ -11,10 +11,10 @@ import pytest
 
 from src.attendance.roll_call import IdentityResult, RollCall
 
-
 # ---------------------------------------------------------------------------
 # IdentityResult dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestIdentityResult:
     def test_known_identity(self):
@@ -36,6 +36,7 @@ class TestIdentityResult:
 # ---------------------------------------------------------------------------
 # RollCall
 # ---------------------------------------------------------------------------
+
 
 class TestRollCall:
     def test_init_nonexistent_dir_does_not_raise(self, tmp_path):

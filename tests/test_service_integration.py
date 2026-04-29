@@ -64,30 +64,37 @@ class TestCameraPayloads:
 
 
 class TestApiEndpoints:
-    @pytest.mark.parametrize("method,path,description", [
-        ("GET",  "/api/health",                     "Health check"),
-        ("POST", "/api/alerts",                     "Queue alert"),
-        ("GET",  "/api/cameras",                    "List cameras"),
-        ("GET",  "/api/cameras/:cameraId",          "Camera status"),
-        ("POST", "/api/cameras/:cameraId/register", "Register camera"),
-        ("POST", "/api/cameras/:cameraId/heartbeat","Send heartbeat"),
-    ])
+    @pytest.mark.parametrize(
+        "method,path,description",
+        [
+            ("GET", "/api/health", "Health check"),
+            ("POST", "/api/alerts", "Queue alert"),
+            ("GET", "/api/cameras", "List cameras"),
+            ("GET", "/api/cameras/:cameraId", "Camera status"),
+            ("POST", "/api/cameras/:cameraId/register", "Register camera"),
+            ("POST", "/api/cameras/:cameraId/heartbeat", "Send heartbeat"),
+        ],
+    )
     def test_endpoint_metadata_serialisable(self, method, path, description):
         info = {"method": method, "path": path, "description": description}
         assert json.loads(json.dumps(info))["method"] == method
 
-    @pytest.mark.parametrize("service,port", [
-        ("Python Core",      5000),
-        ("Alert Dispatcher", 8080),
-        ("Camera Streamer",  8081),
-        ("TypeScript API",   3000),
-        ("Video Optimizer",  8082),
-    ])
+    @pytest.mark.parametrize(
+        "service,port",
+        [
+            ("Python Core", 5000),
+            ("Alert Dispatcher", 8080),
+            ("Camera Streamer", 8081),
+            ("TypeScript API", 3000),
+            ("Video Optimizer", 8082),
+        ],
+    )
     def test_service_port_is_valid(self, service, port):
         assert 1024 <= port <= 65535, f"{service} port {port} is out of valid range"
 
 
 class TestEnvironmentVariables:
+<<<<<<< HEAD
     @pytest.mark.parametrize("var", [
         "SMTP_HOST",
         "SMTP_USER",
@@ -104,6 +111,23 @@ class TestEnvironmentVariables:
         "CAMERA_STREAMER_URL",
         "OPTIMIZER_PORT",
     ])
+=======
+    @pytest.mark.parametrize(
+        "var",
+        [
+            "SMTP_HOST",
+            "SMTP_USER",
+            "SMTP_PASSWORD",
+            "ADMIN_EMAIL",
+            "ALERT_WEBHOOK_URL",
+            "DATABASE_URL",
+            "API_PORT",
+            "ALERT_DISPATCHER_URL",
+            "CAMERA_STREAMER_URL",
+            "OPTIMIZER_PORT",
+        ],
+    )
+>>>>>>> d43d9b78f81f40fef7976aa4be525fb33b16d7ed
     def test_required_env_var_documented(self, var):
         """Verify that each expected environment variable name is a non-empty string."""
         assert isinstance(var, str) and len(var) > 0

@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 class IdentityResult:
     """Face recognition result for a single detection crop."""
 
-    name: str                   # "Unknown" when not recognised
-    confidence: float           # 0–1, higher is better
+    name: str  # "Unknown" when not recognised
+    confidence: float  # 0–1, higher is better
     is_known: bool
 
 
@@ -51,7 +51,7 @@ class RollCall:
     ) -> None:
         self._tolerance = tolerance
         self._known_encodings: Dict[str, list] = {}  # name → [encoding]
-        self._fr = None   # lazy import
+        self._fr = None  # lazy import
         self._load_known_faces(known_faces_dir)
 
     # ------------------------------------------------------------------
@@ -76,9 +76,7 @@ class RollCall:
             rgb = frame_crop[:, :, ::-1]
             locs = fr.face_locations(rgb, model="hog")
             if not locs:
-                return IdentityResult(
-                    name=self.UNKNOWN, confidence=0.0, is_known=False
-                )
+                return IdentityResult(name=self.UNKNOWN, confidence=0.0, is_known=False)
             enc = fr.face_encodings(rgb, locs)[0]
         except Exception as exc:
             logger.debug("face_recognition error: %s", exc)
@@ -132,6 +130,7 @@ class RollCall:
                     continue
                 try:
                     import cv2
+
                     img = cv2.imread(str(img_file))
                     if img is None:
                         continue
@@ -140,21 +139,18 @@ class RollCall:
                     if encs:
                         encodings.extend(encs)
                 except Exception as exc:
-                    logger.warning(
-                        "Could not encode face from %s: %s", img_file, exc
-                    )
+                    logger.warning("Could not encode face from %s: %s", img_file, exc)
             if encodings:
                 self._known_encodings[name] = encodings
                 loaded += 1
 
-        logger.info(
-            "Loaded face encodings for %d people from %s", loaded, base
-        )
+        logger.info("Loaded face encodings for %d people from %s", loaded, base)
 
     def _get_fr(self):
         if self._fr is None:
             try:
                 import face_recognition
+
                 self._fr = face_recognition
             except ImportError:
                 pass

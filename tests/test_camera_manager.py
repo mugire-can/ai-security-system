@@ -15,10 +15,10 @@ import pytest
 from config.settings import CameraConfig
 from src.camera.camera_manager import CameraManager, CameraStream, Frame
 
-
 # ---------------------------------------------------------------------------
 # Frame dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestFrame:
     def test_defaults(self):
@@ -43,6 +43,7 @@ class TestFrame:
 # ---------------------------------------------------------------------------
 # CameraStream (without a real camera device)
 # ---------------------------------------------------------------------------
+
 
 class TestCameraStream:
     def _make_config(self, source: str = "0") -> CameraConfig:
@@ -98,6 +99,7 @@ class TestCameraStream:
 # ---------------------------------------------------------------------------
 # CameraManager
 # ---------------------------------------------------------------------------
+
 
 class TestCameraManager:
     def test_empty_config_no_streams(self):

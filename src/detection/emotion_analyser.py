@@ -47,7 +47,7 @@ class EmotionAnalyser:
     def __init__(self, frame_interval: int = 5) -> None:
         self._interval = frame_interval
         self._call_count = 0
-        self._deepface = None   # lazy import
+        self._deepface = None  # lazy import
 
     # ------------------------------------------------------------------
     # Public
@@ -90,9 +90,7 @@ class EmotionAnalyser:
     # Internal
     # ------------------------------------------------------------------
 
-    def _analyse_face(
-        self, frame: np.ndarray, det: Detection
-    ) -> Tuple[str, float]:
+    def _analyse_face(self, frame: np.ndarray, det: Detection) -> Tuple[str, float]:
         """
         Crop the face region from *frame* and classify the emotion.
 
@@ -135,6 +133,7 @@ class EmotionAnalyser:
         if self._deepface is None:
             try:
                 from deepface import DeepFace
+
                 self._deepface = DeepFace
             except ImportError:
                 logger.warning(

@@ -5,8 +5,8 @@ All settings can be overridden via environment variables or a .env file.
 
 import os
 from dataclasses import dataclass, field
-from typing import List
 from enum import Enum
+from typing import List
 
 
 class VenueType(str, Enum):
@@ -18,9 +18,10 @@ class VenueType(str, Enum):
 @dataclass
 class CameraConfig:
     """Configuration for a single camera feed."""
+
     camera_id: str
-    source: str              # URL, RTSP stream, or integer device index
-    zone: str                # e.g. "entrance", "classroom-A", "shop-floor"
+    source: str  # URL, RTSP stream, or integer device index
+    zone: str  # e.g. "entrance", "classroom-A", "shop-floor"
     fps: int = 15
     width: int = 1280
     height: int = 720
@@ -30,6 +31,7 @@ class CameraConfig:
 @dataclass
 class AlertConfig:
     """Admin notification settings."""
+
     admin_email: str = os.getenv("ADMIN_EMAIL", "admin@example.com")
     smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
@@ -54,6 +56,7 @@ class AlertConfig:
     def validate(self) -> None:
         """Log warnings for common misconfigurations."""
         import logging
+
         _log = logging.getLogger(__name__)
         if self.smtp_user and self.admin_email == "admin@example.com":
             _log.warning(
@@ -66,6 +69,7 @@ class AlertConfig:
 @dataclass
 class DetectionConfig:
     """Thresholds and model settings for the detection pipeline."""
+
     # Minimum confidence to report a detected person (0–1)
     person_confidence_threshold: float = 0.55
     # Minimum confidence for suspicious behaviour classification
@@ -85,15 +89,15 @@ class DetectionConfig:
 @dataclass
 class SystemHealthConfig:
     """Runtime health thresholds for camera and service monitoring."""
+
     camera_stall_seconds: int = int(os.getenv("CAMERA_STALL_SECONDS", "10"))
-    max_consecutive_read_failures: int = int(
-        os.getenv("MAX_CONSECUTIVE_READ_FAILURES", "5")
-    )
+    max_consecutive_read_failures: int = int(os.getenv("MAX_CONSECUTIVE_READ_FAILURES", "5"))
 
 
 @dataclass
 class AttendanceConfig:
     """Roll-call and time-tracking settings."""
+
     # Directory that holds registered face images, one sub-folder per person
     known_faces_dir: str = os.getenv("KNOWN_FACES_DIR", "data/known_faces")
     # Earliest time considered a valid check-in (HH:MM)
@@ -107,12 +111,14 @@ class AttendanceConfig:
 @dataclass
 class DatabaseConfig:
     """Persistent storage settings."""
+
     db_url: str = os.getenv("DATABASE_URL", "sqlite:///data/security_system.db")
 
 
 @dataclass
 class AppConfig:
     """Top-level application configuration."""
+
     venue_type: VenueType = VenueType(os.getenv("VENUE_TYPE", VenueType.SCHOOL.value))
     venue_name: str = os.getenv("VENUE_NAME", "My Venue")
     cameras: List[CameraConfig] = field(default_factory=list)
@@ -133,7 +139,7 @@ DEFAULT_CONFIG = AppConfig(
     cameras=[
         CameraConfig(
             camera_id="cam-01",
-            source="0",          # webcam index 0
+            source="0",  # webcam index 0
             zone="entrance",
         ),
     ],

@@ -21,7 +21,7 @@ import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Dict, Deque, List, Optional, Tuple
+from typing import Deque, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -46,7 +46,7 @@ _ACTIVITY_SUSPICION: Dict[str, float] = {
     "unknown": 0.1,
 }
 
-_LOITERING_SECONDS = 120   # flag after 2 minutes in the same spot
+_LOITERING_SECONDS = 120  # flag after 2 minutes in the same spot
 
 
 @dataclass
@@ -66,17 +66,11 @@ class _TrackState:
     """Internal state kept per tracked individual."""
 
     track_id: str
-    position_history: Deque[Tuple[int, int]] = field(
-        default_factory=lambda: deque(maxlen=60)
-    )
+    position_history: Deque[Tuple[int, int]] = field(default_factory=lambda: deque(maxlen=60))
     first_seen: float = field(default_factory=time.time)
     last_moved: float = field(default_factory=time.time)
-    velocity_history: Deque[float] = field(
-        default_factory=lambda: deque(maxlen=30)
-    )
-    aspect_ratio_history: Deque[float] = field(
-        default_factory=lambda: deque(maxlen=15)
-    )
+    velocity_history: Deque[float] = field(default_factory=lambda: deque(maxlen=30))
+    aspect_ratio_history: Deque[float] = field(default_factory=lambda: deque(maxlen=15))
     last_activity: str = "unknown"
 
 
@@ -126,9 +120,7 @@ class BehaviourAnalyser:
         self._assign_track_ids(people, now)
 
         # Proximity map for fighting detection
-        centres = [
-            (d.bbox.centre() if d.bbox else (0, 0)) for d in people
-        ]
+        centres = [(d.bbox.centre() if d.bbox else (0, 0)) for d in people]
 
         for idx, det in enumerate(people):
             tid = det.track_id or f"anon-{idx}"
@@ -143,7 +135,8 @@ class BehaviourAnalyser:
             state.velocity_history.append(velocity)
             avg_velocity = (
                 sum(state.velocity_history) / len(state.velocity_history)
-                if state.velocity_history else 0.0
+                if state.velocity_history
+                else 0.0
             )
 
             if velocity > 1.0:
@@ -181,9 +174,7 @@ class BehaviourAnalyser:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _assign_track_ids(
-        self, people: List[Detection], now: float
-    ) -> None:
+    def _assign_track_ids(self, people: List[Detection], now: float) -> None:
         """Assign simple positional track IDs to detected people."""
         existing_centres: List[Tuple[str, Tuple[int, int]]] = [
             (tid, list(state.position_history)[-1])
@@ -255,7 +246,7 @@ class BehaviourAnalyser:
         if velocity < 2:
             # Nearly still — could be studying/working/sleeping
             time_in_area = now - state.first_seen
-            if time_in_area > 600:   # 10 min
+            if time_in_area > 600:  # 10 min
                 return "studying"
             return "idle"
 
@@ -264,10 +255,7 @@ class BehaviourAnalyser:
     @staticmethod
     def _make_notes(state: _TrackState, activity: str, now: float) -> str:
         dwell = int(now - state.first_seen)
-        posture = (
-            f"{state.aspect_ratio_history[-1]:.2f}"
-            if state.aspect_ratio_history else "n/a"
-        )
+        posture = f"{state.aspect_ratio_history[-1]:.2f}" if state.aspect_ratio_history else "n/a"
         return (
             f"Track {state.track_id}: dwell={dwell}s, "
             f"activity={activity}, posture_ratio={posture}"
@@ -300,7 +288,8 @@ class BehaviourAnalyser:
 
     def _prune_tracks(self, now: float, max_age: float = 30.0) -> None:
         stale = [
-            tid for tid, s in self._tracks.items()
+            tid
+            for tid, s in self._tracks.items()
             if now - s.last_moved > max_age + self._loitering_threshold
         ]
         for tid in stale:
@@ -310,6 +299,7 @@ class BehaviourAnalyser:
 # ---------------------------------------------------------------------------
 # Utility
 # ---------------------------------------------------------------------------
+
 
 def _euclidean(a: Tuple[int, int], b: Tuple[int, int]) -> float:
     return float(np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2))

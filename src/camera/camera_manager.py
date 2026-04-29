@@ -37,7 +37,7 @@ class Frame:
 
     camera_id: str
     zone: str
-    data: np.ndarray          # BGR image array
+    data: np.ndarray  # BGR image array
     timestamp: float = field(default_factory=time.time)
     frame_number: int = 0
 
@@ -208,8 +208,7 @@ class CameraStream:
                 is_running=True,
                 status="degraded",
                 reason=(
-                    "camera read failures exceeded threshold "
-                    f"({self._consecutive_failures})"
+                    "camera read failures exceeded threshold " f"({self._consecutive_failures})"
                 ),
                 last_frame_timestamp=self._last_frame_timestamp,
                 consecutive_failures=self._consecutive_failures,
@@ -349,8 +348,13 @@ class CameraManager:
         y = 28
         for line in lines:
             cv2.putText(
-                out, line, (10, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2,
+                out,
+                line,
+                (10, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
             )
             y += 26
         return out

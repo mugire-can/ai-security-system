@@ -8,8 +8,8 @@ compilers/runtimes cause those specific checks to be skipped rather
 than fail.
 """
 
-import subprocess
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -22,7 +22,9 @@ _BASE = Path(__file__).parent.parent
 # File-structure checks
 # ---------------------------------------------------------------------------
 
+
 class TestFileStructure:
+<<<<<<< HEAD
     @pytest.mark.parametrize("rel_path,description", [
         (".github/CODEOWNERS", "CODEOWNERS"),
         (".github/dependabot.yml", "Dependabot configuration"),
@@ -51,18 +53,40 @@ class TestFileStructure:
         ("README.md", "Project documentation"),
         (".github/workflows/release.yml", "Release workflow"),
     ])
+=======
+    @pytest.mark.parametrize(
+        "rel_path,description",
+        [
+            ("services/go/alert_dispatcher/main.go", "Go Alert Dispatcher"),
+            ("services/go/alert_dispatcher/go.mod", "Go Alert Dispatcher Module"),
+            ("services/go/camera_streamer/main.go", "Go Camera Streamer"),
+            ("services/go/camera_streamer/go.mod", "Go Camera Streamer Module"),
+            ("services/typescript/api/package.json", "TypeScript API"),
+            ("services/typescript/api/tsconfig.json", "TypeScript Config"),
+            ("services/typescript/api/src/server.ts", "TypeScript Server"),
+            ("services/rust/video_optimizer/Cargo.toml", "Rust Video Optimizer"),
+            ("services/rust/video_optimizer/src/main.rs", "Rust Main"),
+            ("docker-compose.yml", "Docker Compose"),
+            ("Dockerfile.python", "Python Dockerfile"),
+            ("README.md", "Project documentation"),
+        ],
+    )
+>>>>>>> d43d9b78f81f40fef7976aa4be525fb33b16d7ed
     def test_required_file_exists(self, rel_path, description):
         assert (_BASE / rel_path).exists(), f"{description} not found: {rel_path}"
 
 
 class TestPythonCoreIntegrity:
-    @pytest.mark.parametrize("rel_path", [
-        "main.py",
-        "config/settings.py",
-        "src/pipeline.py",
-        "requirements.txt",
-        "pyproject.toml",
-    ])
+    @pytest.mark.parametrize(
+        "rel_path",
+        [
+            "main.py",
+            "config/settings.py",
+            "src/pipeline.py",
+            "requirements.txt",
+            "pyproject.toml",
+        ],
+    )
     def test_python_core_file_exists(self, rel_path):
         assert (_BASE / rel_path).exists(), f"Core file missing: {rel_path}"
 
@@ -70,6 +94,7 @@ class TestPythonCoreIntegrity:
 # ---------------------------------------------------------------------------
 # Go service structure checks
 # ---------------------------------------------------------------------------
+
 
 class TestGoServices:
     @pytest.mark.parametrize("service", ["alert_dispatcher", "camera_streamer"])
@@ -106,6 +131,7 @@ class TestGoServices:
 # TypeScript API checks
 # ---------------------------------------------------------------------------
 
+
 class TestTypescriptApi:
     def test_package_json_is_valid(self):
         pkg_path = _BASE / "services" / "typescript" / "api" / "package.json"
@@ -130,6 +156,7 @@ class TestTypescriptApi:
 # Rust service checks
 # ---------------------------------------------------------------------------
 
+
 class TestRustService:
     def test_cargo_toml_valid(self):
         cargo = (_BASE / "services" / "rust" / "video_optimizer" / "Cargo.toml").read_text()
@@ -146,20 +173,31 @@ class TestRustService:
 # Docker configuration checks
 # ---------------------------------------------------------------------------
 
+
 class TestDockerSetup:
     def test_docker_compose_has_all_services(self):
         compose = (_BASE / "docker-compose.yml").read_text()
-        for service in ("python-core", "alert_dispatcher", "camera_streamer",
-                        "api", "video_optimizer", "postgres", "redis"):
+        for service in (
+            "python-core",
+            "alert_dispatcher",
+            "camera_streamer",
+            "api",
+            "video_optimizer",
+            "postgres",
+            "redis",
+        ):
             assert service in compose, f"Service '{service}' not in docker-compose.yml"
 
-    @pytest.mark.parametrize("dockerfile_path", [
-        "Dockerfile.python",
-        "services/go/alert_dispatcher/Dockerfile",
-        "services/go/camera_streamer/Dockerfile",
-        "services/typescript/api/Dockerfile",
-        "services/rust/video_optimizer/Dockerfile",
-    ])
+    @pytest.mark.parametrize(
+        "dockerfile_path",
+        [
+            "Dockerfile.python",
+            "services/go/alert_dispatcher/Dockerfile",
+            "services/go/camera_streamer/Dockerfile",
+            "services/typescript/api/Dockerfile",
+            "services/rust/video_optimizer/Dockerfile",
+        ],
+    )
     def test_dockerfile_exists(self, dockerfile_path):
         assert (_BASE / dockerfile_path).exists(), f"Missing: {dockerfile_path}"
 

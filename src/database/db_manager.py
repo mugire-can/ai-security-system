@@ -14,6 +14,7 @@ from typing import Optional
 def _utcnow() -> datetime:
     return datetime.now(tz=timezone.utc)
 
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 # Base
 # ---------------------------------------------------------------------------
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -43,6 +45,7 @@ class Base(DeclarativeBase):
 # ---------------------------------------------------------------------------
 # ORM Models
 # ---------------------------------------------------------------------------
+
 
 class DetectionEvent(Base):
     """A single detection captured by a camera frame."""
@@ -53,9 +56,9 @@ class DetectionEvent(Base):
     camera_id = Column(String(64), nullable=False, index=True)
     zone = Column(String(128), nullable=False)
     timestamp = Column(DateTime, default=_utcnow, nullable=False, index=True)
-    object_type = Column(String(64), nullable=False)   # "person", "animal", "vehicle", …
-    track_id = Column(String(64), nullable=True)       # optional tracker identity
-    person_name = Column(String(128), nullable=True)   # set after face recognition
+    object_type = Column(String(64), nullable=False)  # "person", "animal", "vehicle", …
+    track_id = Column(String(64), nullable=True)  # optional tracker identity
+    person_name = Column(String(128), nullable=True)  # set after face recognition
     confidence = Column(Float, nullable=False)
     bbox_x = Column(Integer, nullable=True)
     bbox_y = Column(Integer, nullable=True)
@@ -84,9 +87,9 @@ class BehaviourEvent(Base):
     zone = Column(String(128), nullable=False)
     timestamp = Column(DateTime, default=_utcnow, nullable=False, index=True)
     person_name = Column(String(128), nullable=True)
-    activity = Column(String(128), nullable=True)     # "studying", "working", "loitering", …
-    emotion = Column(String(64), nullable=True)       # "happy", "angry", "fear", …
-    suspicion_score = Column(Float, default=0.0)      # 0.0 – 1.0
+    activity = Column(String(128), nullable=True)  # "studying", "working", "loitering", …
+    emotion = Column(String(64), nullable=True)  # "happy", "angry", "fear", …
+    suspicion_score = Column(Float, default=0.0)  # 0.0 – 1.0
     is_suspicious = Column(Boolean, default=False, index=True)
     notes = Column(Text, nullable=True)
 
@@ -146,7 +149,7 @@ class AttendanceRecord(Base):
     __tablename__ = "attendance_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(String(10), nullable=False, index=True)   # YYYY-MM-DD
+    date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
     person_name = Column(String(128), nullable=False, index=True)
     camera_id = Column(String(64), nullable=False)
     zone = Column(String(128), nullable=False)
@@ -176,8 +179,8 @@ class AnomalyEvent(Base):
     camera_id = Column(String(64), nullable=False, index=True)
     zone = Column(String(128), nullable=False)
     timestamp = Column(DateTime, default=_utcnow, nullable=False, index=True)
-    anomaly_type = Column(String(128), nullable=False)   # "animal", "unattended_bag", …
-    object_class = Column(String(64), nullable=True)     # YOLO class label
+    anomaly_type = Column(String(128), nullable=False)  # "animal", "unattended_bag", …
+    object_class = Column(String(64), nullable=True)  # YOLO class label
     confidence = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
     snapshot_path = Column(String(256), nullable=True)
@@ -194,6 +197,7 @@ class AnomalyEvent(Base):
 # Database manager
 # ---------------------------------------------------------------------------
 
+
 class DatabaseManager:
     """
     Thin wrapper around SQLAlchemy engine + session factory.
@@ -209,6 +213,7 @@ class DatabaseManager:
         self._engine = create_engine(db_url, echo=False, future=True)
         # Enable WAL mode for SQLite to allow concurrent readers
         if db_url.startswith("sqlite"):
+
             @event.listens_for(self._engine, "connect")
             def set_sqlite_pragma(conn, _record):
                 conn.execute("PRAGMA journal_mode=WAL")
@@ -232,8 +237,4 @@ class DatabaseManager:
 
     def get_today_attendance(self, date_str: str) -> list:
         with self.session() as s:
-            return (
-                s.query(AttendanceRecord)
-                .filter(AttendanceRecord.date == date_str)
-                .all()
-            )
+            return s.query(AttendanceRecord).filter(AttendanceRecord.date == date_str).all()
