@@ -101,10 +101,10 @@ class AttendanceTracker:
         """
         now = timestamp or datetime.now()
         date_str = now.strftime("%Y-%m-%d")
-        day = self._records.get(date_str, {})
-        record = day.get(person_name)
-        if record is None:
+        resolved = self._find_open_record(person_name, preferred_date=date_str)
+        if resolved is None:
             return
+        _, record = resolved
 
         if record.get("check_out") is not None:
             return  # already checked out
@@ -194,3 +194,25 @@ class AttendanceTracker:
     @staticmethod
     def _parse_hhmm(hhmm: str) -> datetime:
         return datetime.strptime(hhmm, "%H:%M")
+
+    def _find_open_record(
+        self, person_name: str, preferred_date: str
+    ) -> Optional[tuple[str, dict]]:
+        """
+        Find the most relevant open attendance record for *person_name*.
+
+        Prefer today's record, then fall back to the most recent earlier record
+        that still has no check-out time. This avoids losing auto-checkouts when
+        inactivity crosses midnight.
+        """
+        preferred_day = self._records.get(preferred_date, {})
+        preferred_record = preferred_day.get(person_name)
+        if preferred_record is not None:
+            return preferred_date, preferred_record
+
+        for date_key in sorted(self._records.keys(), reverse=True):
+            record = self._records[date_key].get(person_name)
+            if record is not None and record.get("check_out") is None:
+                return date_key, record
+
+        return None

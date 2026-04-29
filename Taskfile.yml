@@ -1,0 +1,83 @@
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task: help
+
+  help:
+    desc: Show available developer tasks
+    cmds:
+      - task --list
+
+  install:test:
+    desc: Install lightweight test dependencies from pyproject metadata
+    cmds:
+      - python -m pip install -e .[test]
+
+  install:dev:
+    desc: Install developer dependencies including lint and security tools
+    cmds:
+      - python -m pip install -e .[dev]
+
+  install:runtime:
+    desc: Install full local runtime including optional CV integrations
+    cmds:
+      - python -m pip install -e .[vision,test]
+
+  precommit:install:
+    desc: Install git pre-commit hooks
+    cmds:
+      - python -m pip install pre-commit
+      - pre-commit install
+
+  precommit:run:
+    desc: Run all pre-commit hooks against the repository
+    cmds:
+      - pre-commit run --all-files
+
+  test:
+    desc: Run the Python test suite
+    cmds:
+      - python -m pytest tests -q
+
+  fmt:
+    desc: Apply Python formatting
+    cmds:
+      - python -m black config src tests scripts main.py
+      - python -m isort config src tests scripts main.py
+
+  lint:
+    desc: Run Python lint and format checks
+    cmds:
+      - python -m flake8 config src tests scripts main.py --count --select=E9,F63,F7,F82 --show-source --statistics
+      - python -m black --check config src tests scripts main.py
+      - python -m isort --check-only config src tests scripts main.py
+
+  security:
+    desc: Run Bandit static security checks
+    cmds:
+      - python -m bandit -r config src scripts main.py
+
+  evaluation:validate:
+    desc: Validate the benchmark/evaluation manifest structure
+    cmds:
+      - python scripts/validate_evaluation_manifest.py
+
+  init-db:
+    desc: Initialize the local database
+    cmds:
+      - python scripts/setup_database.py
+
+  demo:
+    desc: Run the project in demo mode
+    cmds:
+      - python main.py --demo
+
+  ci:
+    desc: Run the local quality gate used by CI
+    cmds:
+      - task: test
+      - task: lint
+      - task: security
+      - task: evaluation:validate

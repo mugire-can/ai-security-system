@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "description": "Example layout for anomaly and behavior evaluation runs.",
+  "scenarios": [
+    {
+      "id": "fight-corridor-001",
+      "venue_type": "school",
+      "camera_id": "cam-01",
+      "video_path": "evaluation/datasets/fight-corridor-001.mp4",
+      "label_path": "evaluation/labels/fight-corridor-001.json",
+      "expected_events": ["fight"]
+    },
+    {
+      "id": "leak-stockroom-001",
+      "venue_type": "commercial",
+      "camera_id": "cam-04",
+      "video_path": "evaluation/datasets/leak-stockroom-001.mp4",
+      "label_path": "evaluation/labels/leak-stockroom-001.json",
+      "expected_events": ["water_leak_detected"]
+    }
+  ],
+  "metrics": [
+    "precision",
+    "recall",
+    "false_positive_rate",
+    "alert_latency_ms",
+    "camera_uptime_percent"
+  ]
+}

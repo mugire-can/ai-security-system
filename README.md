@@ -71,6 +71,19 @@ python scripts/setup_database.py
 python main.py --demo
 ```
 
+Lightweight test-only setup:
+
+```bash
+python -m pip install -e .[test]
+```
+
+Developer workflow setup:
+
+```bash
+python -m pip install -e .[dev]
+python -m pre-commit install
+```
+
 ### Real Camera
 
 ```bash
@@ -91,6 +104,10 @@ Important variables:
 - `LOITERING_THRESHOLD_SECONDS`: dwell time before loitering alert
 - `CAMERA_STALL_SECONDS`: feed stall threshold
 - `MAX_CONSECUTIVE_READ_FAILURES`: degraded camera threshold
+- `API_AUTH_ENABLED`: require API keys for non-health API routes
+- `API_KEYS`: comma-separated tokens accepted by the TypeScript API
+- `CORS_ORIGIN`: restrict browser access in production
+- `TRUST_PROXY`: set to `1` behind a reverse proxy
 - `SMTP_*` and `ALERT_WEBHOOK_URL`: external alert delivery
 
 The runtime creates local data under `data/`.
@@ -136,6 +153,11 @@ docker-compose build
 docker-compose up
 ```
 
+Sample production config:
+
+- `.env.production.example`
+- `docker-compose.prod.yml`
+
 Useful ports:
 
 - `3000`: TypeScript API
@@ -172,6 +194,43 @@ Code expectations:
 - Add tests for new behavior.
 - Prefer clear thresholds/config over hidden magic values.
 
+Developer command entrypoints:
+
+- `Taskfile.yml` for repeatable local tasks
+- `.pre-commit-config.yaml` for local quality gates before commit
+
+Common commands:
+
+```bash
+task install:dev
+task precommit:install
+task ci
+task evaluation:validate
+```
+
+If `task` is not installed, use the direct Python commands shown in the file.
+
+## GitHub Process
+
+The repo now includes:
+
+- CI for tests, lint, and Bandit security checks
+- Dependabot updates for Python, GitHub Actions, npm, Go, Cargo, and Docker
+- Issue forms for bugs and features
+- A pull request template
+- `CODEOWNERS`
+- `SECURITY.md`
+- `CHANGELOG.md`
+- A tag-based release workflow for `v*.*.*`
+
+Recommended GitHub repository settings:
+
+1. Protect `main`
+2. Require pull requests before merge
+3. Require the `CI`, `Lint`, and `Security` checks to pass
+4. Require at least one approval
+5. Dismiss stale approvals when new commits are pushed
+
 ## Testing
 
 Run:
@@ -182,8 +241,23 @@ python -m pytest tests -q
 
 Current result in this workspace:
 
-- `194 passed`
-- `1 skipped` for an environment-specific Go formatting check
+- `202 passed`
+
+## Evaluation Layout
+
+The repo now includes an `evaluation/` scaffold for real benchmark work:
+
+- `evaluation/datasets/`: local video samples, ignored by git
+- `evaluation/labels/`: scenario labels, ignored by git
+- `evaluation/results/`: generated metrics, ignored by git
+- `evaluation/baselines/`: comparison outputs, ignored by git
+- `evaluation/manifest.example.json`: example scenario manifest
+
+Validate the scaffold with:
+
+```bash
+python scripts/validate_evaluation_manifest.py
+```
 
 ## Notes
 
@@ -191,3 +265,5 @@ Current result in this workspace:
 - The old checked-in SQLite database was removed.
 - Real production accuracy depends on camera placement, model quality, and
   whether your model exposes the labels you expect.
+- Release history lives in `CHANGELOG.md`.
+- Vulnerability reporting guidance lives in `SECURITY.md`.

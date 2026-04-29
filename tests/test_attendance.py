@@ -81,11 +81,21 @@ class TestAttendanceTracker:
 
     def test_auto_checkout_inactive_person(self):
         tracker = self._make_tracker()
-        old_ts = datetime.now() - timedelta(seconds=600)
+        now = datetime.now()
+        old_ts = now - timedelta(seconds=600)
+        inactivity_seconds = 300
+
+        # Keep the test stable around midnight: if a 10-minute subtraction
+        # crosses into the previous day, use a shorter same-day inactivity
+        # window instead of depending on calendar timing.
+        if old_ts.date() != now.date():
+            old_ts = now - timedelta(seconds=1)
+            inactivity_seconds = 0
+
         tracker.record_sighting("Jake", "cam-01", "room", timestamp=old_ts)
         tracker._last_seen["Jake"] = old_ts
 
-        tracker.auto_checkout(inactivity_seconds=300)
+        tracker.auto_checkout(inactivity_seconds=inactivity_seconds)
         summary = tracker.get_today_summary()
         checked_out = [r for r in summary if r["name"] == "Jake" and r["check_out"] != "—"]
         assert len(checked_out) == 1
