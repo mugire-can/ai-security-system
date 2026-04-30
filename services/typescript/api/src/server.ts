@@ -1,6 +1,7 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -17,20 +18,35 @@ const API_KEYS = new Set(
     .map((value) => value.trim())
     .filter(Boolean)
 );
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+// Default to empty string (no wildcard) — require explicit CORS_ORIGIN configuration.
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
 
 app.use(helmet());
 if (TRUST_PROXY > 0) {
   app.set('trust proxy', TRUST_PROXY);
 }
 
-app.use(cors({
-  origin: CORS_ORIGIN === '*'
-    ? true
-    : CORS_ORIGIN.split(',').map((value) => value.trim()).filter(Boolean),
-}));
+// Validate that each configured origin starts with http:// or https://.
+function parseAllowedOrigins(value: string): string[] | boolean {
+  if (!value) return false;
+  if (value === '*') return true;
+  return value
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => /^https?:\/\//.test(o));
+}
+
+app.use(cors({ origin: parseAllowedOrigins(CORS_ORIGIN) }));
 app.use(express.json());
 
+// Apply rate limiting to all /api routes (100 requests per 15 minutes per IP).
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
 interface Alert {
   camera_id: string;
   zone: string;
@@ -89,11 +105,12 @@ function requireApiKey(req: Request, res: Response, next: NextFunction): void {
     return;
   }
 
-  res.setHeader('x-authenticated-client', authFingerprint(credential));
+  // Log the fingerprint server-side only — never expose it in response headers.
+  console.info(`Authenticated request [fingerprint=${authFingerprint(credential)}] ${req.method} ${req.path}`);
   next();
 }
 
-app.use('/api', requireApiKey);
+app.use('/api', apiLimiter, requireApiKey);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
