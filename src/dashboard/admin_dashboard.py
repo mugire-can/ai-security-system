@@ -14,6 +14,7 @@ terminal (e.g. CI pipelines, Docker log capture, file redirection).
 """
 
 import logging
+import os
 import subprocess  # nosec B404
 import sys
 import time
