@@ -11,6 +11,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Python
 __pycache__/
@@ -54,3 +55,14 @@ data/snapshots/
 
 # Local/generated reports
 PYTHON_COMPATIBILITY_REPORT.md
+
+# Task runner / evaluation working data
+.task/
+evaluation/datasets/*
+!evaluation/datasets/.gitkeep
+evaluation/labels/*
+!evaluation/labels/.gitkeep
+evaluation/results/*
+!evaluation/results/.gitkeep
+evaluation/baselines/*
+!evaluation/baselines/.gitkeep

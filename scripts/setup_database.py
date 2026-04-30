@@ -297,7 +297,7 @@ class DatabaseSetup:
         except Exception as e:
             try:
                 session.rollback()
-            except:
+            except Exception:  # nosec B110
                 pass
             print(f"❌ Error seeding test data: {e}")
             import traceback
@@ -308,7 +308,7 @@ class DatabaseSetup:
         finally:
             try:
                 session.close()
-            except:
+            except Exception:  # nosec B110
                 pass
 
     def backup(self, output_file: str = None) -> bool:

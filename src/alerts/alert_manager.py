@@ -188,6 +188,10 @@ class AlertManager:
 
     def _send_webhook(self, alert: Alert) -> bool:
         """POST a JSON payload to the configured webhook URL."""
+        url = self._config.webhook_url
+        if not url.lower().startswith(("http://", "https://")):
+            logger.error("Webhook URL must use http:// or https:// scheme.")
+            return False
         payload = {
             "text": (
                 f"🚨 *{alert.severity.upper()} ALERT* — `{alert.alert_type}`\n"
@@ -203,12 +207,12 @@ class AlertManager:
         }
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
-            self._config.webhook_url,
+            url,
             data=data,
             headers={"Content-Type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310
                 logger.info("Webhook alert sent (status %s).", resp.status)
             return True
         except (urllib.error.URLError, OSError) as exc:

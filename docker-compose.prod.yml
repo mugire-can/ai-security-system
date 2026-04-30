@@ -1,0 +1,107 @@
+version: "3.8"
+
+services:
+  python-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+    networks:
+      - security-network
+
+  alert_dispatcher:
+    build:
+      context: ./services/go/alert_dispatcher
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    networks:
+      - security-network
+
+  camera_streamer:
+    build:
+      context: ./services/go/camera_streamer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - security-network
+
+  api:
+    build:
+      context: ./services/typescript/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+    environment:
+      API_PORT: ${API_PORT}
+      API_AUTH_ENABLED: ${API_AUTH_ENABLED}
+      API_KEYS: ${API_KEYS}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      TRUST_PROXY: ${TRUST_PROXY}
+      ALERT_DISPATCHER_URL: ${ALERT_DISPATCHER_URL}
+      CAMERA_STREAMER_URL: ${CAMERA_STREAMER_URL}
+    depends_on:
+      - alert_dispatcher
+      - camera_streamer
+    networks:
+      - security-network
+
+  video_optimizer:
+    build:
+      context: ./services/rust/video_optimizer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      OPTIMIZER_PORT: 8082
+      RUST_LOG: info
+    networks:
+      - security-network
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - security-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - security-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  security-network:
+    driver: bridge
