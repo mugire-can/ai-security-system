@@ -47,7 +47,7 @@ jobs:
 
       - name: Build source archive
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          REPO_NAME="${{ github.event.repository.name }}"
           git archive --format=zip --output "${REPO_NAME}-${GITHUB_REF_NAME}.zip" HEAD
 
       - name: Create release

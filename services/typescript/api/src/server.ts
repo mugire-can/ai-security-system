@@ -27,9 +27,9 @@ if (TRUST_PROXY > 0) {
 }
 
 // Validate that each configured origin starts with http:// or https://.
-function parseAllowedOrigins(value: string): string[] | boolean {
+// Note: '*' wildcard is intentionally not supported — require explicit origins.
+function parseAllowedOrigins(value: string): string[] | false {
   if (!value) return false;
-  if (value === '*') return true;
   return value
     .split(',')
     .map((o) => o.trim())
